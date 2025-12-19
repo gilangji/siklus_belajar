@@ -3,6 +3,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContai
 import { UserProgress, StudySession, AppView } from '../types';
 import { Trophy, Clock, Target, Book, TrendingUp, PieChart, Compass, Map, Zap, BrainCircuit, ArrowRight, Lightbulb, ChevronRight, PlayCircle, RotateCw, FileText, X, Eye } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface DashboardProps {
   sessions: StudySession[];
@@ -352,7 +353,23 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
                 <div className="mb-6">
                   <h4 className="text-lg font-bold text-white mb-4 border-b border-line pb-2">Catatan Pembelajaran (Arsip)</h4>
                   <article className="prose prose-invert prose-sm max-w-none text-txt-muted">
-                     <ReactMarkdown>{selectedSession.notes}</ReactMarkdown>
+                     <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          table: ({node, ...props}) => (
+                            <div className="overflow-x-auto my-6 border border-line rounded-lg">
+                              <table className="w-full text-left border-collapse" {...props} />
+                            </div>
+                          ),
+                          thead: ({node, ...props}) => <thead className="bg-surfaceLight" {...props} />,
+                          tbody: ({node, ...props}) => <tbody className="divide-y divide-line" {...props} />,
+                          tr: ({node, ...props}) => <tr className="hover:bg-white/5" {...props} />,
+                          th: ({node, ...props}) => <th className="p-3 font-bold text-xs uppercase text-primary border-b border-line" {...props} />,
+                          td: ({node, ...props}) => <td className="p-3 text-sm text-txt-muted border-r border-line last:border-r-0" {...props} />,
+                        }}
+                     >
+                       {selectedSession.notes}
+                     </ReactMarkdown>
                   </article>
                 </div>
              </div>

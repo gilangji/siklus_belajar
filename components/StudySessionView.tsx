@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { generateStudyNotes, generateQuiz, askStudyTutor } from '../services/geminiService';
 import { StudySession, QuizQuestion } from '../types';
 import { Loader2, Youtube, Clock, BookOpen, ArrowRight, Save, PlayCircle, Timer, Coffee, Play, PauseCircle, Upload, FileText, X, Settings2, BarChart3, PenTool, MessageSquare, Send, ChevronRight, ChevronLeft, Hourglass } from 'lucide-react';
@@ -383,7 +384,7 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
               className="w-full bg-primary hover:bg-primaryHover text-white font-bold text-lg py-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/25 hover:shadow-primary/40"
             >
               {loading ? <Loader2 className="animate-spin" /> : <BookOpen />}
-              {loading ? 'Memproses Materi...' : 'Mulai Sesi Belajar'}
+              {loading ? 'Memproses Materi (Sabar ya, ini akan detail)...' : 'Mulai Sesi Belajar'}
             </button>
           </div>
         </div>
@@ -511,7 +512,24 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
             {/* Markdown Content */}
             <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-markdown">
               <article className="prose prose-invert prose-lg max-w-none prose-headings:text-white prose-a:text-primary prose-strong:text-white prose-code:text-accent prose-code:bg-surfaceLight prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surfaceLight prose-pre:border prose-pre:border-line">
-                <ReactMarkdown>{notes}</ReactMarkdown>
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    // Custom Table Rendering to match UI
+                    table: ({node, ...props}) => (
+                      <div className="overflow-x-auto my-8 border border-line rounded-xl shadow-lg">
+                        <table className="w-full text-left border-collapse bg-surfaceLight/20" {...props} />
+                      </div>
+                    ),
+                    thead: ({node, ...props}) => <thead className="bg-surfaceLight text-primary" {...props} />,
+                    tbody: ({node, ...props}) => <tbody className="divide-y divide-line" {...props} />,
+                    tr: ({node, ...props}) => <tr className="hover:bg-white/5 transition-colors" {...props} />,
+                    th: ({node, ...props}) => <th className="p-4 font-bold text-sm uppercase tracking-wider border-b border-line" {...props} />,
+                    td: ({node, ...props}) => <td className="p-4 text-sm text-txt-muted border-r border-line last:border-r-0" {...props} />,
+                  }}
+                >
+                  {notes}
+                </ReactMarkdown>
               </article>
             </div>
 

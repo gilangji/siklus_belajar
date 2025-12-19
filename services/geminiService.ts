@@ -98,18 +98,28 @@ export const generateStudyNotes = async (
   const ai = getAIClient();
 
   let basePrompt = `
-    Saya sedang mempelajari topik: "${topic}".
-    Tingkat Kesulitan Materi: ${difficulty}.
+    Saya ingin Anda bertindak sebagai **Profesor Akademik Penulis Buku Teks**. 
+    Topik saat ini: "${topic}".
+    Tingkat Kedalaman: ${difficulty} (Sangat Mendalam).
     
-    Tolong buatkan catatan belajar yang mendetail dan terstruktur (dalam format Markdown) menggunakan Bahasa Indonesia.
+    TUGAS UTAMA:
+    Buat materi pembelajaran yang **SANGAT PANJANG, MENDALAM, DAN KOMPREHENSIF** (setara dengan satu bab penuh buku teks). Jangan membuat ringkasan pendek. Gali setiap sub-topik secara detail.
     
-    Catatan harus mencakup:
-    - Definisi dan Konsep Kunci
-    - Teori atau Prinsip Inti
-    - Contoh aplikasi dunia nyata
-    - Ringkasan poin-poin penting.
+    STRUKTUR WAJIB:
+    1. **Pendahuluan Menyeluruh**: Latar belakang sejarah, definisi, dan signifikansi topik.
+    2. **Konsep & Teori Inti**: Penjelasan panjang lebar tentang mekanisme atau teori di baliknya.
+    3. **Tabel Perbandingan (WAJIB)**: Buat Tabel Markdown yang membandingkan minimal 2 konsep/metode/pendekatan dalam topik ini. Gunakan kolom seperti [Aspek | Konsep A | Konsep B | Keterangan].
+    4. **Studi Kasus / Contoh Penerapan**: Skenario nyata yang mendetail (bukan poin-poin singkat).
+    5. **Analisis Kritis**: Pro dan kontra, perdebatan akademik, atau tantangan saat ini.
+    6. **Kesimpulan & Poin Kunci**.
+
+    FORMATTING:
+    - Gunakan **Tabel Markdown** untuk menyajikan data terstruktur.
+    - Gunakan **Bold** untuk istilah kunci.
+    - Tulis minimal 1500 kata jika memungkinkan.
+    - Gunakan Bahasa Indonesia yang akademis namun mudah dipahami.
     
-    ${customInstructions ? `INSTRUKSI TAMBAHAN DARI PENGGUNA: "${customInstructions}"` : ""}
+    ${customInstructions ? `INSTRUKSI KHUSUS PENGGUNA: "${customInstructions}"` : ""}
   `;
 
   let promptContext = basePrompt;
@@ -119,17 +129,17 @@ export const generateStudyNotes = async (
   if (referenceLink) {
     promptContext += `\n
       Saya memiliki tautan referensi: ${referenceLink}.
-      1. Gunakan Google Search untuk mengakses konten tautan ini. 
-      2. Jika itu adalah video YouTube, temukan transkrip atau ringkasan konten video tersebut.
-      3. Gabungkan informasi dari tautan ini dengan pengetahuan umum Anda.
+      1. Gunakan Google Search untuk mengakses konten tautan ini secara mendalam. 
+      2. Ekstrak detail spesifik, statistik, atau argumen utama dari tautan tersebut.
+      3. Integrasikan informasi ini ke dalam struktur bab di atas.
     `;
   }
 
   // Handle File Logic
   if (fileData) {
     promptContext += `\n
-      Saya juga telah mengunggah sebuah dokumen/gambar sebagai referensi utama.
-      Analisis dokumen yang dilampirkan dan gunakan sebagai sumber utama untuk membuat catatan.
+      Saya juga telah mengunggah sebuah dokumen/gambar sebagai materi sumber.
+      Analisis dokumen ini secara menyeluruh. Jangan lewatkan detail kecil. Gunakan ini sebagai fondasi utama materi.
     `;
     // Add the file as an inline part
     parts.push({
@@ -145,11 +155,11 @@ export const generateStudyNotes = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview', // Switched from gemini-3-pro-preview to avoid quota limits
+      model: 'gemini-3-flash-preview', 
       contents: { parts }, // Send parts array
       config: {
         tools: referenceLink ? [{ googleSearch: {} }] : undefined,
-        systemInstruction: "Anda adalah tutor pribadi yang cerdas. Buat materi belajar yang mudah dipahami, terstruktur, dan gunakan Bahasa Indonesia yang baik."
+        systemInstruction: "Anda adalah Profesor Universitas yang sedang menulis buku teks. Anda sangat menyukai penjelasan yang panjang, mendetail, dan menggunakan tabel untuk data. Jangan pernah memberikan jawaban pendek."
       }
     });
 
@@ -189,7 +199,7 @@ export const generateQuiz = async (topic: string, notesContext?: string): Promis
   };
 
   const context = notesContext 
-    ? `Berdasarkan catatan ini: ${notesContext.substring(0, 10000)}` 
+    ? `Berdasarkan catatan ini: ${notesContext.substring(0, 20000)}` 
     : `Berdasarkan pengetahuan umum tentang "${topic}"`;
 
   const prompt = `
@@ -279,7 +289,7 @@ export const askStudyTutor = async (question: string, contextNotes: string): Pro
   
   const prompt = `
     KONTEKS MATERI BELAJAR:
-    ${contextNotes.substring(0, 15000)}
+    ${contextNotes.substring(0, 20000)}
     
     PERTANYAAN PENGGUNA:
     "${question}"
