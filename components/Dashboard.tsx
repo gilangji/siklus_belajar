@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { UserProgress, StudySession, AppView } from '../types';
-import { Trophy, Clock, Target, Book, TrendingUp, PieChart, Compass, Map, Zap, BrainCircuit, ArrowRight, Lightbulb, ChevronRight } from 'lucide-react';
+import { Trophy, Clock, Target, Book, TrendingUp, PieChart, Compass, Map, Zap, BrainCircuit, ArrowRight, Lightbulb, ChevronRight, PlayCircle, RotateCw, FileText, X, Eye } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 interface DashboardProps {
   sessions: StudySession[];
   progress: UserProgress;
   onChangeView: (view: AppView) => void;
+  onStartStudy: (topic: string) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView }) => {
+const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView, onStartStudy }) => {
   const [activeGuide, setActiveGuide] = useState<string | null>(null);
+  const [selectedSession, setSelectedSession] = useState<StudySession | null>(null);
+
+  // Get the most recent session
+  const lastSession = sessions.length > 0 
+    ? [...sessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+    : null;
 
   // 1. Prepare Data for Bar Chart: Total Study Time per Topic
   const getTopicStudyDistribution = () => {
@@ -76,100 +84,47 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
         <p className="text-txt-muted text-lg">Pantau kemajuan Anda, pertahankan siklus, dan raih penguasaan.</p>
       </header>
 
-      {/* --- SMART LEARNING COMPASS (GUIDE) --- */}
-      <div className="relative overflow-hidden rounded-2xl border border-line bg-surfaceLight/30 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-50 pointer-events-none" />
-        <div className="absolute -right-20 -top-20 opacity-20 pointer-events-none">
-           <div className="w-96 h-96 bg-primary rounded-full blur-[100px]" />
+      {/* --- HERO SECTION: CONTINUE LEARNING (Requested "Histori Impact" feature) --- */}
+      {lastSession && (
+        <div className="glass-card rounded-2xl overflow-hidden relative group border border-primary/30 shadow-[0_0_30px_rgba(92,101,230,0.15)]">
+           <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-80"></div>
+           <div className="absolute -right-10 -bottom-20 w-64 h-64 bg-primary rounded-full blur-[80px] opacity-30 group-hover:opacity-40 transition-opacity"></div>
+           
+           <div className="relative z-10 p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div>
+                 <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-primary px-3 py-1 rounded-full text-[10px] font-bold text-white uppercase tracking-wider shadow-lg shadow-primary/40 flex items-center gap-1">
+                      <Clock size={12} /> Lanjutkan Belajar
+                    </span>
+                    <span className="text-xs text-txt-muted">Terakhir: {new Date(lastSession.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}</span>
+                 </div>
+                 <h3 className="text-2xl md:text-3xl font-bold text-white mb-2 leading-tight">{lastSession.topic}</h3>
+                 <p className="text-txt-muted text-sm max-w-xl">
+                   Anda terakhir kali mendapatkan skor <span className={lastSession.quizScore && lastSession.quizScore >= 70 ? "text-green-400 font-bold" : "text-orange-400 font-bold"}>{lastSession.quizScore || 0}%</span>. 
+                   {lastSession.quizScore && lastSession.quizScore >= 70 
+                     ? " Hasil yang bagus! Siap untuk materi lanjutan atau pendalaman?" 
+                     : " Mungkin perlu sedikit pengulangan untuk memperkuat ingatan."}
+                 </p>
+              </div>
+              
+              <div className="flex gap-3 shrink-0">
+                 <button 
+                   onClick={() => setSelectedSession(lastSession)}
+                   className="px-5 py-3 rounded-xl bg-surfaceLight border border-line text-txt-muted hover:text-white hover:bg-white/5 font-semibold transition-all flex items-center gap-2"
+                 >
+                   <Eye size={18} /> Review
+                 </button>
+                 <button 
+                   onClick={() => onStartStudy(lastSession.topic)}
+                   className="px-6 py-3 rounded-xl bg-primary hover:bg-primaryHover text-white font-bold transition-all shadow-lg shadow-primary/30 flex items-center gap-2 group-hover:scale-105 transform duration-200"
+                 >
+                   <PlayCircle size={20} /> 
+                   {lastSession.quizScore && lastSession.quizScore >= 70 ? "Lanjut Belajar" : "Ulangi Materi"}
+                 </button>
+              </div>
+           </div>
         </div>
-        
-        <div className="relative z-10 p-8">
-          <h3 className="text-xl font-semibold text-white flex items-center gap-2 mb-6">
-            <Compass className="text-primary" size={24} /> 
-            Kompas Belajar
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Option 1 */}
-            <div 
-              className={`group relative p-5 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden transform hover:scale-[1.03] ${activeGuide === 'plan' ? 'bg-primary/10 border-primary shadow-[0_0_20px_rgba(92,101,230,0.2)]' : 'bg-surface border-line hover:border-white/20'}`}
-              onClick={() => setActiveGuide('plan')}
-            >
-              <div className="flex items-start justify-between mb-4">
-                 <div className="p-2.5 bg-surfaceLight rounded-lg text-primary border border-white/5"><Map size={20} /></div>
-                 {activeGuide === 'plan' && <div className="text-primary animate-pulse"><Lightbulb size={16} /></div>}
-              </div>
-              <h4 className="font-semibold text-white mb-1">Saya bingung mulai dari mana</h4>
-              <p className="text-xs text-txt-muted mb-4 leading-relaxed">Dapatkan struktur belajar sistematis yang dirancang oleh AI.</p>
-              
-              {activeGuide === 'plan' ? (
-                 <button 
-                    onClick={(e) => { e.stopPropagation(); onChangeView(AppView.PLANNER); }}
-                    className="w-full py-2 bg-primary hover:bg-primaryHover text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-primary/30"
-                  >
-                    Buat Rencana <ArrowRight size={14} />
-                  </button>
-              ) : (
-                <div className="h-8 flex items-end">
-                   <span className="text-xs font-medium text-txt-dim group-hover:text-primary transition-colors flex items-center gap-1">Pilih jalur ini <ChevronRight size={12}/></span>
-                </div>
-              )}
-            </div>
-
-            {/* Option 2 */}
-            <div 
-              className={`group relative p-5 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden transform hover:scale-[1.03] ${activeGuide === 'study' ? 'bg-primary/10 border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.1)]' : 'bg-surface border-line hover:border-white/20'}`}
-              onClick={() => setActiveGuide('study')}
-            >
-              <div className="flex items-start justify-between mb-4">
-                 <div className="p-2.5 bg-surfaceLight rounded-lg text-green-400 border border-white/5"><Zap size={20} /></div>
-                 {activeGuide === 'study' && <div className="text-green-400 animate-pulse"><Lightbulb size={16} /></div>}
-              </div>
-              <h4 className="font-semibold text-white mb-1">Saya sudah punya materi</h4>
-              <p className="text-xs text-txt-muted mb-4 leading-relaxed">Analisis dokumen atau video YouTube secara instan.</p>
-              
-              {activeGuide === 'study' ? (
-                 <button 
-                    onClick={(e) => { e.stopPropagation(); onChangeView(AppView.STUDY_SESSION); }}
-                    className="w-full py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-green-600/30"
-                  >
-                    Mulai Sesi <ArrowRight size={14} />
-                  </button>
-              ) : (
-                <div className="h-8 flex items-end">
-                   <span className="text-xs font-medium text-txt-dim group-hover:text-green-400 transition-colors flex items-center gap-1">Pilih jalur ini <ChevronRight size={12}/></span>
-                </div>
-              )}
-            </div>
-
-            {/* Option 3 */}
-            <div 
-              className={`group relative p-5 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden transform hover:scale-[1.03] ${activeGuide === 'quiz' ? 'bg-primary/10 border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.1)]' : 'bg-surface border-line hover:border-white/20'}`}
-              onClick={() => setActiveGuide('quiz')}
-            >
-              <div className="flex items-start justify-between mb-4">
-                 <div className="p-2.5 bg-surfaceLight rounded-lg text-purple-400 border border-white/5"><BrainCircuit size={20} /></div>
-                 {activeGuide === 'quiz' && <div className="text-purple-400 animate-pulse"><Lightbulb size={16} /></div>}
-              </div>
-              <h4 className="font-semibold text-white mb-1">Saya ingin tes ingatan</h4>
-              <p className="text-xs text-txt-muted mb-4 leading-relaxed">Evaluasi pemahaman dengan kuis dan flashcards.</p>
-              
-              {activeGuide === 'quiz' ? (
-                 <button 
-                    onClick={(e) => { e.stopPropagation(); onChangeView(AppView.QUIZ_MODE); }}
-                    className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-purple-600/30"
-                  >
-                    Latihan Soal <ArrowRight size={14} />
-                  </button>
-              ) : (
-                <div className="h-8 flex items-end">
-                   <span className="text-xs font-medium text-txt-dim group-hover:text-purple-400 transition-colors flex items-center gap-1">Pilih jalur ini <ChevronRight size={12}/></span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -193,14 +148,12 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
         {/* Chart 1: Time per Topic */}
         <div className="glass-card p-6 rounded-xl flex flex-col h-[400px] transition-all duration-300 hover:scale-[1.03] hover:bg-white/5 hover:border-white/20">
           <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
             <PieChart size={18} className="text-primary" /> Distribusi Fokus
           </h3>
           <p className="text-xs text-txt-muted mb-6">Alokasi waktu belajar per topik.</p>
-          
           <div className="flex-1 w-full">
             {topicData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -240,7 +193,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
             <TrendingUp size={18} className="text-accent" /> Performa
           </h3>
           <p className="text-xs text-txt-muted mb-6">Tren nilai kuis dari waktu ke waktu.</p>
-          
           <div className="flex-1 w-full">
             {scoreData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -287,10 +239,11 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
         </div>
       </div>
 
-      {/* Recent Sessions List */}
-      <div className="glass-card rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:border-white/20 hover:shadow-2xl">
-        <div className="p-6 border-b border-line">
-          <h3 className="text-lg font-semibold text-white">Aktivitas Terkini</h3>
+      {/* Recent Sessions List (Interactive History) */}
+      <div className="glass-card rounded-xl overflow-hidden transition-all duration-300 hover:border-white/20 hover:shadow-2xl">
+        <div className="p-6 border-b border-line flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-white">Riwayat Belajar</h3>
+          <span className="text-xs text-txt-muted bg-surfaceLight px-2 py-1 rounded">Klik baris untuk detail</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -300,11 +253,16 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
                 <th className="py-4 px-6 font-medium">Tanggal</th>
                 <th className="py-4 px-6 font-medium">Durasi</th>
                 <th className="py-4 px-6 font-medium">Kuis</th>
+                <th className="py-4 px-6 font-medium text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="text-sm divide-y divide-line">
-              {sessions.slice().reverse().slice(0, 10).map((session) => (
-                <tr key={session.id} className="hover:bg-white/5 transition-colors">
+              {sessions.slice().reverse().map((session) => (
+                <tr 
+                  key={session.id} 
+                  onClick={() => setSelectedSession(session)}
+                  className="hover:bg-white/5 transition-colors cursor-pointer group"
+                >
                   <td className="py-4 px-6 text-white font-medium">
                     <div className="flex items-center gap-2">
                        {session.topic}
@@ -325,11 +283,16 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
                       <span className="text-txt-dim text-xs">-</span>
                     )}
                   </td>
+                  <td className="py-4 px-6 text-right">
+                    <button className="p-2 text-txt-dim group-hover:text-primary transition-colors hover:bg-primary/10 rounded-full">
+                       <ArrowRight size={16} />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {sessions.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-16 text-center">
+                  <td colSpan={5} className="py-16 text-center">
                     <div className="flex flex-col items-center justify-center text-txt-dim">
                       <Book size={40} className="mb-3 opacity-20" />
                       <p>Belum ada sesi tercatat.</p>
@@ -342,6 +305,80 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
           </table>
         </div>
       </div>
+
+      {/* --- SESSION DETAIL MODAL --- */}
+      {selectedSession && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-surface border border-line rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col relative overflow-hidden">
+             {/* Header */}
+             <div className="flex justify-between items-start p-6 border-b border-line bg-surfaceLight/30 shrink-0">
+               <div>
+                 <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                   <FileText className="text-primary" size={24} />
+                   Detail Sesi: {selectedSession.topic}
+                 </h3>
+                 <p className="text-sm text-txt-muted mt-1">
+                   {new Date(selectedSession.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                   {' • '}{selectedSession.durationMinutes} Menit
+                 </p>
+               </div>
+               <button 
+                 onClick={() => setSelectedSession(null)}
+                 className="p-2 bg-surfaceLight hover:bg-white/10 rounded-full text-txt-muted hover:text-white transition-colors"
+               >
+                 <X size={20} />
+               </button>
+             </div>
+
+             {/* Content Scrollable */}
+             <div className="overflow-y-auto p-8 custom-markdown flex-1 bg-surface">
+                {/* Result Summary */}
+                <div className="flex gap-4 mb-8">
+                   <div className="flex-1 bg-surfaceLight/50 p-4 rounded-xl border border-line">
+                      <p className="text-xs uppercase text-txt-dim font-bold mb-1">Skor Kuis</p>
+                      <p className={`text-3xl font-bold ${
+                        (selectedSession.quizScore || 0) >= 80 ? 'text-green-400' : 
+                        (selectedSession.quizScore || 0) >= 60 ? 'text-amber-400' : 'text-red-400'
+                      }`}>
+                        {selectedSession.quizScore || 0}%
+                      </p>
+                   </div>
+                   <div className="flex-1 bg-surfaceLight/50 p-4 rounded-xl border border-line">
+                      <p className="text-xs uppercase text-txt-dim font-bold mb-1">Status</p>
+                      <p className="text-3xl font-bold text-white">Selesai</p>
+                   </div>
+                </div>
+
+                <div className="mb-6">
+                  <h4 className="text-lg font-bold text-white mb-4 border-b border-line pb-2">Catatan Pembelajaran (Arsip)</h4>
+                  <article className="prose prose-invert prose-sm max-w-none text-txt-muted">
+                     <ReactMarkdown>{selectedSession.notes}</ReactMarkdown>
+                  </article>
+                </div>
+             </div>
+
+             {/* Footer Actions */}
+             <div className="p-6 border-t border-line bg-surfaceLight/30 shrink-0 flex justify-end gap-3">
+               <button 
+                 onClick={() => setSelectedSession(null)}
+                 className="px-5 py-2.5 rounded-xl border border-line text-txt-muted hover:text-white hover:bg-white/5 font-semibold transition-all"
+               >
+                 Tutup
+               </button>
+               <button 
+                 onClick={() => {
+                   onStartStudy(selectedSession.topic);
+                   setSelectedSession(null);
+                 }}
+                 className="px-6 py-2.5 rounded-xl bg-primary hover:bg-primaryHover text-white font-bold transition-all shadow-lg shadow-primary/25 flex items-center gap-2"
+               >
+                 <RotateCw size={18} />
+                 {(selectedSession.quizScore || 0) < 70 ? 'Pelajari Ulang' : 'Pendalaman Materi'}
+               </button>
+             </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

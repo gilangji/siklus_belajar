@@ -24,7 +24,6 @@ const App: React.FC = () => {
 
   // 1. Check Auth Session
   useEffect(() => {
-    // Handle session check safely to prevent crash if config is missing
     const checkSession = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -46,7 +45,7 @@ const App: React.FC = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      // Reset guest mode if user logs in
+      // Reset guest mode if user logs in via auth flow
       if (session) setIsGuest(false);
     });
 
@@ -57,6 +56,9 @@ const App: React.FC = () => {
   useEffect(() => {
     if (session?.user && !isGuest) {
       fetchUserData();
+    } else if (isGuest) {
+      // If guest, ensure local state is clean or load from local storage if implemented later
+      // For now, Guest starts fresh on reload as per standard secure behavior
     }
   }, [session, isGuest]);
 
@@ -100,21 +102,41 @@ const App: React.FC = () => {
     setCurrentView(AppView.STUDY_SESSION);
   };
 
+  const handleLogout = async () => {
+    setLoading(true);
+    await supabase.auth.signOut();
+    setSession(null);
+    setIsGuest(false);
+    setModules([]);
+    setSessions([]);
+    setCurrentView(AppView.DASHBOARD);
+    setLoading(false);
+  };
+
   // --- SUPABASE SYNC FUNCTIONS ---
 
   const handleSaveSession = async (newSession: StudySession) => {
-    // Optimistic Update
-    setSessions([...sessions, newSession]);
+    // 1. Update Local State (Optimistic UI)
+    setSessions(prev => [...prev, newSession]);
 
-    // Only save to DB if logged in and NOT guest
+    // 2. Sync to Database if Logged In
     if (session?.user && !isGuest) {
-      const { error } = await supabase.from('sessions').insert({
-        ...newSession,
-        user_id: session.user.id
-      });
-      if (error) {
-        console.error("Failed to save session to DB:", error);
+      try {
+        const { error } = await supabase.from('sessions').insert({
+          ...newSession,
+          user_id: session.user.id
+        });
+        
+        if (error) {
+          console.error("Failed to save session to DB:", error.message);
+          alert("Gagal menyimpan ke database cloud. Pastikan koneksi internet stabil.");
+        }
+      } catch (err) {
+         console.error("Exception saving session:", err);
       }
+    } else if (isGuest) {
+      // Optional: Inform guest user that data is volatile
+      // alert("Sesi disimpan sementara. Buat akun agar data tidak hilang saat refresh.");
     }
   };
 
@@ -122,9 +144,6 @@ const App: React.FC = () => {
     setModules(updatedModules);
 
     if (session?.user && !isGuest) {
-      // Logic for syncing is complex (delete/insert or upsert).
-      // For simplicity in this structure: Upsert each changed module.
-      
       const payload = updatedModules.map(m => ({
         id: m.id,
         user_id: session.user.id,
@@ -135,7 +154,6 @@ const App: React.FC = () => {
         completed: m.completed
       }));
 
-      // Upsert (Insert or Update if ID exists)
       const { error } = await supabase.from('modules').upsert(payload);
       if (error) console.error("Failed to sync modules:", error);
     }
@@ -161,6 +179,10 @@ const App: React.FC = () => {
         onChangeView={setCurrentView} 
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
+        session={session}
+        isGuest={isGuest}
+        onLogout={handleLogout}
+        userSessions={sessions}
       />
 
       <div className="flex-1 flex flex-col h-full overflow-hidden relative z-10">
@@ -174,8 +196,9 @@ const App: React.FC = () => {
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
           {isGuest && (
-            <div className="max-w-7xl mx-auto mb-6 bg-blue-500/10 border border-blue-500/20 text-blue-400 p-3 rounded-lg text-sm flex items-center justify-center">
-              Mode Tamu Aktif: Data tidak akan disimpan ke database permanen.
+            <div className="max-w-7xl mx-auto mb-6 bg-orange-500/10 border border-orange-500/20 text-orange-400 p-3 rounded-lg text-sm flex items-center justify-center gap-2">
+              <span>⚠️ Mode Tamu: Data <strong>tidak akan disimpan</strong> permanen.</span>
+              <button onClick={handleLogout} className="underline hover:text-orange-300">Buat Akun</button>
             </div>
           )}
           
@@ -185,6 +208,7 @@ const App: React.FC = () => {
                 sessions={sessions} 
                 progress={progress} 
                 onChangeView={setCurrentView}
+                onStartStudy={handleStartStudy}
               />
             )}
             
