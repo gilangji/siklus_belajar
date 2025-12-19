@@ -108,13 +108,30 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
           mimeType: selectedFile.type,
           data: base64Data
         });
+
+        // AUTO-FILL Logic:
+        // Jika topik masih kosong, ambil dari nama file (tanpa ekstensi)
+        if (!topic.trim()) {
+           const nameWithoutExt = selectedFile.name.split('.').slice(0, -1).join('.') || selectedFile.name;
+           setTopic(nameWithoutExt);
+        }
       };
       reader.readAsDataURL(selectedFile);
     }
   };
 
   const handleStartSession = async () => {
-    if (!topic) return;
+    // Tentukan topik efektif: Jika input kosong tapi ada file, gunakan nama file/placeholder
+    let effectiveTopic = topic;
+    if (!effectiveTopic.trim() && file) {
+       effectiveTopic = file.name;
+       setTopic(effectiveTopic); // Update state agar UI sinkron
+    }
+
+    if (!effectiveTopic) {
+        alert("Mohon masukkan topik atau unggah file.");
+        return;
+    }
     
     setStartTime(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }));
     setLoading(true);
@@ -127,7 +144,7 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
     
     try {
       const notesResult = await generateStudyNotes(
-        topic, 
+        effectiveTopic, 
         link, 
         file ? { mimeType: file.mimeType, data: file.data } : undefined,
         customInstructions,
@@ -135,7 +152,7 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
       );
       setNotes(notesResult);
       
-      const quizResult = await generateQuiz(topic, notesResult);
+      const quizResult = await generateQuiz(effectiveTopic, notesResult);
       setGeneratedQuiz(quizResult);
       
       setStep('LEARNING');
@@ -243,44 +260,14 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
         <p className="text-txt-muted mb-8 ml-14">Siapkan materi dan preferensi belajar Anda.</p>
         
         <div className="space-y-8">
-          {/* TOPIC INPUT */}
-          <div className="group">
-            <label className="block text-sm font-semibold text-txt-muted mb-2 group-focus-within:text-primary transition-colors">Topik Pembelajaran</label>
-            <input 
-              type="text" 
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="cth: Pengantar Machine Learning, Sejarah Romawi..."
-              className="w-full p-3.5 bg-surfaceLight/50 border border-line rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-white placeholder-txt-dim"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* LINK INPUT */}
-            <div className="group">
-              <label className="block text-sm font-semibold text-txt-muted mb-2 group-focus-within:text-primary transition-colors">
-                Sumber Referensi (URL)
-              </label>
-              <div className="relative">
-                <Youtube className="absolute left-4 top-3.5 text-txt-dim group-focus-within:text-red-500 transition-colors" size={20} />
-                <input 
-                  type="text" 
-                  value={link}
-                  onChange={(e) => setLink(e.target.value)}
-                  placeholder="https://youtube.com/..."
-                  className="w-full pl-12 p-3.5 bg-surfaceLight/50 border border-line rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-white placeholder-txt-dim"
-                />
-              </div>
-            </div>
-
-             {/* FILE UPLOAD INPUT */}
-            <div>
+           {/* FILE UPLOAD INPUT - Moved to Top for better flow based on user request */}
+           <div>
                <label className="block text-sm font-semibold text-txt-muted mb-2">
-                Unggah Materi
+                Unggah Dokumen / Materi (Prioritas)
               </label>
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="border border-dashed border-line bg-surfaceLight/30 rounded-lg p-3.5 cursor-pointer hover:bg-surfaceLight/60 hover:border-primary/50 transition-all flex items-center justify-between group h-[52px]"
+                className={`border border-dashed rounded-lg p-3.5 cursor-pointer transition-all flex items-center justify-between group h-[52px] ${file ? 'bg-primary/10 border-primary/50' : 'bg-surfaceLight/30 border-line hover:bg-surfaceLight/60 hover:border-primary/50'}`}
               >
                 <input 
                   type="file" 
@@ -293,12 +280,12 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
                 {!file ? (
                   <div className="flex items-center gap-3 text-txt-muted w-full">
                      <Upload size={18} />
-                     <span className="text-sm">Pilih file...</span>
+                     <span className="text-sm">Klik untuk pilih file (PDF, Gambar, Teks)...</span>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2 overflow-hidden">
-                      <FileText size={18} className="text-green-500 flex-shrink-0" />
+                      <FileText size={18} className="text-primary flex-shrink-0" />
                       <span className="text-sm font-medium text-white truncate">{file.name}</span>
                     </div>
                     <button 
@@ -309,6 +296,38 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
                     </button>
                   </div>
                 )}
+              </div>
+            </div>
+
+          {/* TOPIC INPUT */}
+          <div className="group">
+            <label className="block text-sm font-semibold text-txt-muted mb-2 group-focus-within:text-primary transition-colors">
+              Topik Pembelajaran {file ? <span className="text-xs font-normal text-green-400 ml-1">(Terisi Otomatis)</span> : <span className="text-xs font-normal text-red-400 ml-1">*</span>}
+            </label>
+            <input 
+              type="text" 
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder={file ? `Menggunakan materi dari: ${file.name}` : "cth: Pengantar Machine Learning"}
+              className="w-full p-3.5 bg-surfaceLight/50 border border-line rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-white placeholder-txt-dim"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* LINK INPUT */}
+            <div className="group">
+              <label className="block text-sm font-semibold text-txt-muted mb-2 group-focus-within:text-primary transition-colors">
+                Sumber Referensi (URL Opsional)
+              </label>
+              <div className="relative">
+                <Youtube className="absolute left-4 top-3.5 text-txt-dim group-focus-within:text-red-500 transition-colors" size={20} />
+                <input 
+                  type="text" 
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                  placeholder="https://youtube.com/..."
+                  className="w-full pl-12 p-3.5 bg-surfaceLight/50 border border-line rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-white placeholder-txt-dim"
+                />
               </div>
             </div>
           </div>
@@ -359,7 +378,8 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
           <div className="pt-4">
             <button 
               onClick={handleStartSession}
-              disabled={loading || !topic}
+              // Button is enabled if there is a file OR a topic
+              disabled={loading || (!topic.trim() && !file)}
               className="w-full bg-primary hover:bg-primaryHover text-white font-bold text-lg py-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/25 hover:shadow-primary/40"
             >
               {loading ? <Loader2 className="animate-spin" /> : <BookOpen />}
