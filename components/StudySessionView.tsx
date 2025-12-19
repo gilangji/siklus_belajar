@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { generateStudyNotes, generateQuiz, askStudyTutor } from '../services/geminiService';
 import { StudySession, QuizQuestion } from '../types';
-import { Loader2, Youtube, Clock, BookOpen, ArrowRight, Save, PlayCircle, Timer, Coffee, Play, PauseCircle, Upload, FileText, X, Settings2, BarChart3, PenTool, MessageSquare, Send, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Loader2, Youtube, Clock, BookOpen, ArrowRight, Save, PlayCircle, Timer, Coffee, Play, PauseCircle, Upload, FileText, X, Settings2, BarChart3, PenTool, MessageSquare, Send, ChevronRight, ChevronLeft, Hourglass } from 'lucide-react';
 
 interface StudySessionViewProps {
   initialTopic?: string;
@@ -20,6 +20,10 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   const [customInstructions, setCustomInstructions] = useState('');
   const [startTime, setStartTime] = useState('');
   
+  // Timer Configuration State
+  const [targetStudyMinutes, setTargetStudyMinutes] = useState(25);
+  const [targetBreakMinutes, setTargetBreakMinutes] = useState(5);
+
   // Learning State
   const [loading, setLoading] = useState(false);
   const [notes, setNotes] = useState('');
@@ -32,10 +36,12 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   
-  // Timer State
-  const [elapsedSeconds, setElapsedSeconds] = useState(0); // Waktu Belajar
-  const [breakSeconds, setBreakSeconds] = useState(0);     // Waktu Istirahat
-  const [isBreak, setIsBreak] = useState(false);           // Status Istirahat
+  // Timer Logic State
+  const [elapsedSeconds, setElapsedSeconds] = useState(0); // Total waktu aktif belajar (akumulatif)
+  const [breakSeconds, setBreakSeconds] = useState(0);     // Total waktu istirahat (akumulatif)
+  const [sessionSeconds, setSessionSeconds] = useState(0); // Waktu sesi saat ini (untuk countdown)
+  const [breakSessionSeconds, setBreakSessionSeconds] = useState(0); // Waktu istirahat saat ini (untuk countdown)
+  const [isBreak, setIsBreak] = useState(false);           
   
   // Quiz State
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
@@ -61,9 +67,11 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
     if (step === 'LEARNING') {
       interval = setInterval(() => {
         if (isBreak) {
-          setBreakSeconds((prev) => prev + 1);
+          setBreakSeconds((prev) => prev + 1);       // Total akumulatif
+          setBreakSessionSeconds((prev) => prev + 1); // Sesi istirahat ini
         } else {
-          setElapsedSeconds((prev) => prev + 1);
+          setElapsedSeconds((prev) => prev + 1);     // Total akumulatif
+          setSessionSeconds((prev) => prev + 1);     // Sesi belajar ini
         }
       }, 1000);
     } else if (step === 'QUIZ') {
@@ -76,9 +84,10 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
     return () => clearInterval(interval);
   }, [step, isBreak]);
 
+  // Format Helper: MM:SS
   const formatTime = (totalSeconds: number) => {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
+    const minutes = Math.floor(Math.abs(totalSeconds) / 60);
+    const seconds = Math.abs(totalSeconds) % 60;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
@@ -93,7 +102,6 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
-        // Remove data URL prefix (e.g., "data:image/png;base64,")
         const base64Data = base64String.split(',')[1];
         setFile({
           name: selectedFile.name,
@@ -112,11 +120,12 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
     setLoading(true);
     setElapsedSeconds(0);
     setBreakSeconds(0);
+    setSessionSeconds(0);
+    setBreakSessionSeconds(0);
     setIsBreak(false);
-    setChatHistory([]); // Reset chat
+    setChatHistory([]); 
     
     try {
-      // 1. Generate Notes with Link, File, and Options
       const notesResult = await generateStudyNotes(
         topic, 
         link, 
@@ -126,7 +135,6 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
       );
       setNotes(notesResult);
       
-      // 2. Generate Quiz
       const quizResult = await generateQuiz(topic, notesResult);
       setGeneratedQuiz(quizResult);
       
@@ -158,7 +166,7 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   };
 
   const handleFinishReading = () => {
-    setIsBreak(false); // Pastikan istirahat berhenti saat masuk kuis
+    setIsBreak(false);
     if (generatedQuiz.length > 0) {
       setStep('QUIZ');
     } else {
@@ -206,16 +214,35 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
     setStep('RESULT');
   };
 
+  // --- Calculate Progress for Timer UI ---
+  const getTimerStatus = () => {
+    if (isBreak) {
+      const totalSeconds = targetBreakMinutes * 60;
+      const remaining = totalSeconds - breakSessionSeconds;
+      const isOvertime = remaining < 0;
+      const progress = Math.min(100, Math.max(0, (breakSessionSeconds / totalSeconds) * 100));
+      return { remaining, isOvertime, progress, label: 'Waktu Istirahat' };
+    } else {
+      const totalSeconds = targetStudyMinutes * 60;
+      const remaining = totalSeconds - sessionSeconds;
+      const isOvertime = remaining < 0;
+      const progress = Math.min(100, Math.max(0, (sessionSeconds / totalSeconds) * 100));
+      return { remaining, isOvertime, progress, label: 'Fokus Belajar' };
+    }
+  };
+
+  const timerStatus = getTimerStatus();
+
   if (step === 'SETUP') {
     return (
-      <div className="max-w-2xl mx-auto glass-card p-10 rounded-2xl animate-fade-in mb-10 mt-6">
+      <div className="max-w-3xl mx-auto glass-card p-10 rounded-2xl animate-fade-in mb-10 mt-6">
         <h2 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
           <div className="p-2 bg-primary rounded-lg shadow-lg shadow-primary/30 text-white"><PlayCircle size={24} /></div>
           Mulai Sesi
         </h2>
         <p className="text-txt-muted mb-8 ml-14">Siapkan materi dan preferensi belajar Anda.</p>
         
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* TOPIC INPUT */}
           <div className="group">
             <label className="block text-sm font-semibold text-txt-muted mb-2 group-focus-within:text-primary transition-colors">Topik Pembelajaran</label>
@@ -228,110 +255,115 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
             />
           </div>
 
-          {/* LINK INPUT */}
-          <div className="group">
-            <label className="block text-sm font-semibold text-txt-muted mb-2 group-focus-within:text-primary transition-colors">
-              Sumber Referensi (URL)
-            </label>
-            <div className="relative">
-              <Youtube className="absolute left-4 top-3.5 text-txt-dim group-focus-within:text-red-500 transition-colors" size={20} />
-              <input 
-                type="text" 
-                value={link}
-                onChange={(e) => setLink(e.target.value)}
-                placeholder="https://youtube.com/..."
-                className="w-full pl-12 p-3.5 bg-surfaceLight/50 border border-line rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-white placeholder-txt-dim"
-              />
-            </div>
-          </div>
-
-          {/* FILE UPLOAD INPUT */}
-          <div>
-             <label className="block text-sm font-semibold text-txt-muted mb-2">
-              Unggah Materi
-            </label>
-            <div 
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-line bg-surfaceLight/30 rounded-xl p-8 cursor-pointer hover:bg-surfaceLight/60 hover:border-primary/50 transition-all flex flex-col items-center justify-center gap-3 group"
-            >
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileChange} 
-                className="hidden" 
-                accept=".pdf,.doc,.docx,.txt,.epub,image/png,image/jpeg,image/webp"
-              />
-              
-              {!file ? (
-                <>
-                  <div className="p-3 bg-surfaceLight rounded-full text-txt-dim group-hover:text-primary group-hover:bg-primary/10 transition-colors">
-                    <Upload size={24} />
-                  </div>
-                  <span className="text-txt-muted text-sm font-medium">Klik untuk upload dokumen atau gambar</span>
-                  <span className="text-xs text-txt-dim">PDF, DOCX, TXT, EPUB, PNG, JPG (Max 10MB)</span>
-                </>
-              ) : (
-                <div className="flex items-center justify-between w-full px-4 py-2 bg-surfaceLight rounded-lg border border-line">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-500/10 rounded text-green-500">
-                      <FileText size={20} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-white truncate max-w-[200px]">{file.name}</p>
-                      <p className="text-xs text-green-500">Siap dianalisis</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                    className="p-1 hover:bg-white/10 rounded-full text-txt-dim hover:text-white"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             {/* DIFFICULTY SELECTOR */}
-             <div>
-               <label className="block text-sm font-semibold text-txt-muted mb-2 flex items-center gap-1">
-                 <BarChart3 size={16} /> Kesulitan
-               </label>
-               <select 
-                 value={difficulty}
-                 onChange={(e) => setDifficulty(e.target.value)}
-                 className="w-full p-3.5 bg-surfaceLight/50 border border-line rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-white appearance-none cursor-pointer hover:bg-surfaceLight transition-colors"
-               >
-                 <option value="Pemula">Pemula</option>
-                 <option value="Menengah">Menengah</option>
-                 <option value="Lanjut">Lanjut</option>
-               </select>
-             </div>
-
-             {/* CUSTOM INSTRUCTIONS */}
-             <div>
-                <label className="block text-sm font-semibold text-txt-muted mb-2 flex items-center gap-1">
-                  <PenTool size={16} /> Instruksi Khusus
-                </label>
-                <input
-                  type="text"
-                  value={customInstructions}
-                  onChange={(e) => setCustomInstructions(e.target.value)}
-                  placeholder="Cth: Fokus pada teori, gunakan analogi..."
-                  className="w-full p-3.5 bg-surfaceLight/50 border border-line rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-white placeholder-txt-dim"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* LINK INPUT */}
+            <div className="group">
+              <label className="block text-sm font-semibold text-txt-muted mb-2 group-focus-within:text-primary transition-colors">
+                Sumber Referensi (URL)
+              </label>
+              <div className="relative">
+                <Youtube className="absolute left-4 top-3.5 text-txt-dim group-focus-within:text-red-500 transition-colors" size={20} />
+                <input 
+                  type="text" 
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                  placeholder="https://youtube.com/..."
+                  className="w-full pl-12 p-3.5 bg-surfaceLight/50 border border-line rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-white placeholder-txt-dim"
                 />
-             </div>
+              </div>
+            </div>
+
+             {/* FILE UPLOAD INPUT */}
+            <div>
+               <label className="block text-sm font-semibold text-txt-muted mb-2">
+                Unggah Materi
+              </label>
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className="border border-dashed border-line bg-surfaceLight/30 rounded-lg p-3.5 cursor-pointer hover:bg-surfaceLight/60 hover:border-primary/50 transition-all flex items-center justify-between group h-[52px]"
+              >
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileChange} 
+                  className="hidden" 
+                  accept=".pdf,.doc,.docx,.txt,.epub,image/png,image/jpeg,image/webp"
+                />
+                
+                {!file ? (
+                  <div className="flex items-center gap-3 text-txt-muted w-full">
+                     <Upload size={18} />
+                     <span className="text-sm">Pilih file...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <FileText size={18} className="text-green-500 flex-shrink-0" />
+                      <span className="text-sm font-medium text-white truncate">{file.name}</span>
+                    </div>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                      className="p-1 hover:bg-white/10 rounded-full text-txt-dim hover:text-white"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="pt-6 border-t border-line mt-4">
+          {/* TIME MANAGEMENT SECTION */}
+          <div className="p-5 rounded-xl border border-line bg-surfaceLight/20">
+            <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+              <Hourglass size={16} className="text-primary" /> Manajemen Waktu
+            </h3>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-semibold text-txt-dim mb-1.5 uppercase tracking-wider">Durasi Belajar (Menit)</label>
+                <div className="relative">
+                   <input 
+                    type="number" 
+                    min="1"
+                    value={targetStudyMinutes}
+                    onChange={(e) => setTargetStudyMinutes(Number(e.target.value))}
+                    className="w-full p-3 bg-surfaceLight border border-line rounded-lg focus:ring-2 focus:ring-primary outline-none text-white font-mono text-center"
+                  />
+                  <span className="absolute right-3 top-3 text-txt-dim text-xs">min</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-txt-dim mb-1.5 uppercase tracking-wider">Durasi Istirahat (Menit)</label>
+                <div className="relative">
+                   <input 
+                    type="number" 
+                    min="1"
+                    value={targetBreakMinutes}
+                    onChange={(e) => setTargetBreakMinutes(Number(e.target.value))}
+                    className="w-full p-3 bg-surfaceLight border border-line rounded-lg focus:ring-2 focus:ring-primary outline-none text-white font-mono text-center"
+                  />
+                  <span className="absolute right-3 top-3 text-txt-dim text-xs">min</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+             {/* Hidden options for cleaner UI as requested, defaults are good */}
+             <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
+               <option value="Menengah">Menengah</option>
+             </select>
+             <input value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} />
+          </div>
+
+          <div className="pt-4">
             <button 
               onClick={handleStartSession}
               disabled={loading || !topic}
               className="w-full bg-primary hover:bg-primaryHover text-white font-bold text-lg py-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/25 hover:shadow-primary/40"
             >
               {loading ? <Loader2 className="animate-spin" /> : <BookOpen />}
-              {loading ? 'Memproses Materi...' : 'Mulai Belajar'}
+              {loading ? 'Memproses Materi...' : 'Mulai Sesi Belajar'}
             </button>
           </div>
         </div>
@@ -342,42 +374,84 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   if (step === 'LEARNING') {
     return (
       <div className="max-w-7xl mx-auto h-[calc(100vh-140px)] flex flex-col animate-fade-in">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-4 glass-card p-4 rounded-xl gap-4">
-          <div className="flex items-center gap-4 overflow-hidden w-full md:w-auto">
-            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-colors ${isBreak ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' : 'bg-primary/10 text-primary border border-primary/20'}`}>
-              {isBreak ? 'Istirahat' : 'Fase Belajar'}
-            </span>
-            <h2 className="text-lg font-bold text-white truncate">{topic}</h2>
-          </div>
-          
-          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-            {/* Timers */}
-            <div className="flex bg-surfaceLight rounded-lg p-1 border border-line">
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-md font-mono text-sm font-medium transition-colors ${isBreak ? 'bg-orange-500/20 text-orange-400' : 'text-txt-dim'}`}>
-                <Coffee size={14} />
-                {formatTime(breakSeconds)}
-              </div>
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-md font-mono text-sm font-medium transition-colors ${!isBreak ? 'bg-primary/20 text-primary' : 'text-txt-dim'}`}>
-                <Timer size={14} />
-                {formatTime(elapsedSeconds)}
-              </div>
+        
+        {/* Modern Timer Header */}
+        <div className="mb-4 glass-card rounded-xl overflow-hidden flex flex-col relative">
+          {/* Progress Bar Background */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-surfaceLight"></div>
+          {/* Active Progress Bar */}
+          <div 
+            className={`absolute top-0 left-0 h-1 transition-all duration-1000 ease-linear ${isBreak ? 'bg-orange-500' : 'bg-primary'}`}
+            style={{ width: `${timerStatus.progress}%` }}
+          ></div>
+
+          <div className="p-4 flex flex-col md:flex-row justify-between items-center gap-4 relative z-10">
+            
+            {/* Left: Topic Info */}
+            <div className="flex items-center gap-4 w-full md:w-auto overflow-hidden">
+               <div className={`p-2 rounded-lg flex-shrink-0 ${isBreak ? 'bg-orange-500/10 text-orange-500' : 'bg-primary/10 text-primary'}`}>
+                 {isBreak ? <Coffee size={24} /> : <BookOpen size={24} />}
+               </div>
+               <div className="min-w-0">
+                 <p className="text-xs text-txt-dim font-bold uppercase tracking-wider mb-0.5">
+                    {timerStatus.label}
+                 </p>
+                 <h2 className="text-lg font-bold text-white truncate">{topic}</h2>
+               </div>
             </div>
 
-            {/* Controls */}
-            <button
-              onClick={() => setIsBreak(!isBreak)}
-              className={`p-2.5 rounded-lg transition-all border border-line hover:border-white/20 ${isBreak ? 'bg-primary text-white hover:bg-primaryHover' : 'bg-surfaceLight text-txt-muted hover:text-white'}`}
-              title={isBreak ? "Lanjut Belajar" : "Mulai Istirahat"}
-            >
-              {isBreak ? <Play size={18} fill="currentColor" /> : <Coffee size={18} />}
-            </button>
+            {/* Center/Right: Timer & Controls */}
+            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+               
+               {/* Countdown Display */}
+               <div className={`text-center px-6 py-2 rounded-lg border ${
+                 timerStatus.isOvertime 
+                  ? 'bg-red-500/10 border-red-500/30 text-red-500' 
+                  : 'bg-surfaceLight border-line text-white'
+               }`}>
+                  <div className="text-2xl font-mono font-bold tracking-widest leading-none">
+                    {timerStatus.isOvertime ? '+' : ''}{formatTime(timerStatus.remaining)}
+                  </div>
+                  {timerStatus.isOvertime && (
+                    <div className="text-[10px] font-bold uppercase mt-1">Overtime</div>
+                  )}
+               </div>
 
-            <button 
-              onClick={handleFinishReading}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-lg transition-colors font-bold text-sm shadow-lg shadow-green-900/40 ml-2"
-            >
-              Kuis <ArrowRight size={16} />
-            </button>
+               <div className="h-8 w-px bg-line mx-2 hidden md:block"></div>
+
+               <div className="flex gap-2">
+                 <button
+                  onClick={() => {
+                    // Reset session timer when switching modes for cleaner counting
+                    if (isBreak) {
+                       setBreakSessionSeconds(0);
+                       setIsBreak(false);
+                    } else {
+                       setSessionSeconds(0);
+                       setIsBreak(true);
+                    }
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all border ${
+                    isBreak 
+                      ? 'bg-primary text-white border-primary hover:bg-primaryHover' 
+                      : 'bg-surfaceLight text-txt-muted border-line hover:text-white hover:border-white/30'
+                  }`}
+                 >
+                   {isBreak ? (
+                     <><Play size={16} fill="currentColor" /> Lanjut Belajar</>
+                   ) : (
+                     <><Coffee size={16} /> Istirahat</>
+                   )}
+                 </button>
+
+                 <button 
+                  onClick={handleFinishReading}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-5 py-2.5 rounded-lg transition-colors font-bold text-sm shadow-lg shadow-green-900/40"
+                 >
+                   Selesai <ArrowRight size={16} />
+                 </button>
+               </div>
+            </div>
           </div>
         </div>
 
@@ -388,16 +462,26 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
             {/* Overlay saat istirahat */}
             {isBreak && (
               <div className="absolute inset-0 bg-surface/90 backdrop-blur-md z-20 flex flex-col items-center justify-center text-center p-6 animate-fade-in">
-                <div className="bg-orange-500/10 p-6 rounded-full mb-6 border border-orange-500/20 shadow-[0_0_30px_rgba(249,115,22,0.1)]">
-                  <Coffee size={48} className="text-orange-500" />
+                <div className="relative">
+                  <div className="absolute inset-0 bg-orange-500 blur-[60px] opacity-20 rounded-full"></div>
+                  <div className="relative bg-surfaceLight border border-orange-500/30 p-8 rounded-full mb-6 shadow-2xl">
+                    <Coffee size={64} className="text-orange-500" />
+                  </div>
                 </div>
-                <h3 className="text-3xl font-bold text-white mb-3">Recharge</h3>
-                <p className="text-txt-muted max-w-md text-lg leading-relaxed">
-                  Istirahatkan mata dan pikiran Anda sejenak. Otak memproses informasi paling baik saat istirahat.
+                
+                <h3 className="text-4xl font-bold text-white mb-3 tracking-tight">Waktunya Istirahat</h3>
+                <div className="text-5xl font-mono font-bold text-orange-400 mb-6">
+                   {formatTime(timerStatus.remaining)}
+                </div>
+                <p className="text-txt-muted max-w-md text-lg leading-relaxed mb-8">
+                  Jauhkan pandangan dari layar. Regangkan tubuh Anda.
                 </p>
                 <button 
-                  onClick={() => setIsBreak(false)}
-                  className="mt-10 bg-primary text-white px-10 py-3 rounded-full font-bold hover:bg-primaryHover transition-all shadow-lg shadow-primary/30 flex items-center gap-2"
+                  onClick={() => {
+                    setBreakSessionSeconds(0);
+                    setIsBreak(false);
+                  }}
+                  className="bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-all shadow-lg flex items-center gap-2"
                 >
                   <PlayCircle size={20} /> Kembali Fokus
                 </button>
@@ -523,7 +607,7 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
               <button
                 key={idx}
                 onClick={() => handleAnswer(idx)}
-                className="w-full text-left p-5 rounded-xl border border-line bg-surfaceLight/30 hover:bg-primary/10 hover:border-primary/50 text-txt-muted hover:text-white transition-all duration-200 flex items-center group relative overflow-hidden"
+                className="w-full text-left p-5 rounded-xl border border-line bg-surfaceLight/30 hover:border-primary hover:bg-primary/10 text-txt-muted hover:text-white transition-all duration-200 flex items-center group relative overflow-hidden"
               >
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-primary transition-colors"></div>
                 <span className="w-8 h-8 rounded-lg bg-surfaceLight text-txt-dim flex items-center justify-center mr-5 group-hover:bg-primary group-hover:text-white text-sm font-bold transition-all border border-line group-hover:border-primary">
@@ -577,6 +661,8 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
               setNotes('');
               setElapsedSeconds(0);
               setBreakSeconds(0);
+              setSessionSeconds(0);
+              setBreakSessionSeconds(0);
               setIsBreak(false);
             }}
             className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-gray-200 transition-colors shadow-lg"
