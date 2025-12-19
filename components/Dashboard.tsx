@@ -195,7 +195,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Chart 1: Time per Topic */}
-        <div className="glass-card p-6 rounded-xl flex flex-col h-[400px] transition-all duration-300 hover:scale-[1.02] hover:bg-white/5 hover:border-white/20">
+        <div className="glass-card p-6 rounded-xl flex flex-col h-[400px] transition-all duration-300 hover:scale-[1.03] hover:bg-white/5 hover:border-white/20">
           <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
             <PieChart size={18} className="text-primary" /> Distribusi Fokus
           </h3>
@@ -235,7 +235,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
         </div>
 
         {/* Chart 2: Score Trend */}
-        <div className="glass-card p-6 rounded-xl flex flex-col h-[400px] transition-all duration-300 hover:scale-[1.02] hover:bg-white/5 hover:border-white/20">
+        <div className="glass-card p-6 rounded-xl flex flex-col h-[400px] transition-all duration-300 hover:scale-[1.03] hover:bg-white/5 hover:border-white/20">
           <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
             <TrendingUp size={18} className="text-accent" /> Performa
           </h3>
@@ -288,7 +288,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
       </div>
 
       {/* Recent Sessions List */}
-      <div className="glass-card rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:border-white/20 hover:shadow-2xl">
+      <div className="glass-card rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:border-white/20 hover:shadow-2xl">
         <div className="p-6 border-b border-line">
           <h3 className="text-lg font-semibold text-white">Aktivitas Terkini</h3>
         </div>

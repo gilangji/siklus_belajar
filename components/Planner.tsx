@@ -177,7 +177,7 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy }) 
           <div 
             key={module.id} 
             className={`glass-card rounded-xl transition-all duration-300 group ${
-              module.completed ? 'opacity-70 grayscale-[0.5]' : 'hover:border-primary/50 hover:scale-[1.02]'
+              module.completed ? 'opacity-70 grayscale-[0.5]' : 'hover:border-primary/50 hover:scale-[1.03]'
             }`}
           >
             <div className="p-6 md:p-8">

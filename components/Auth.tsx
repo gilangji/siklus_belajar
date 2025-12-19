@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { Loader2, User, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Loader2, User, Lock, ArrowRight, ShieldCheck, UserCircle2 } from 'lucide-react';
 
-const Auth: React.FC = () => {
+interface AuthProps {
+  onGuestLogin: () => void;
+}
+
+const Auth: React.FC<AuthProps> = ({ onGuestLogin }) => {
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -14,21 +18,37 @@ const Auth: React.FC = () => {
     setLoading(true);
     setMessage(null);
 
-    // Create a dummy email address based on the username for Supabase compatibility
-    // Sanitize username to ensure it's valid for an email string
-    const sanitizedUsername = username.trim().toLowerCase().replace(/\s+/g, '');
-    const dummyEmail = `${sanitizedUsername}@studyflow.user`;
+    // 1. Sanitize username: Allow alphanumeric, dots, underscores, and hyphens. 
+    // Remove spaces and other symbols to ensure valid email local-part.
+    const sanitizedUsername = username.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '');
+    
+    if (sanitizedUsername.length < 3) {
+      setMessage({ type: 'error', text: 'Username minimal 3 karakter (huruf, angka, . _ -)' });
+      setLoading(false);
+      return;
+    }
+
+    // 2. Use a standard TLD (.app) to satisfy Supabase's strict email validator
+    const dummyEmail = `${sanitizedUsername}@studyflow.app`;
 
     try {
       if (isSignUp) {
+        // Sign Up Logic
         const { error } = await supabase.auth.signUp({
           email: dummyEmail,
           password,
+          options: {
+            // Store the display name in metadata
+            data: { username: username }
+          }
         });
+        
         if (error) throw error;
+        
         setMessage({ type: 'success', text: 'Akun berhasil dibuat! Silakan login.' });
-        setIsSignUp(false); // Switch to login immediately since no email verification needed for dummy
+        setIsSignUp(false);
       } else {
+        // Sign In Logic
         const { error } = await supabase.auth.signInWithPassword({
           email: dummyEmail,
           password,
@@ -36,9 +56,17 @@ const Auth: React.FC = () => {
         if (error) throw error;
       }
     } catch (error: any) {
-      // Improve error message if it's about invalid login
-      if (error.message.includes('Invalid login credentials')) {
+      console.error("Auth error:", error);
+      
+      // Handle specific Supabase error messages regarding email format
+      if (error.message.includes('valid email')) {
+        setMessage({ type: 'error', text: 'Format username tidak valid. Gunakan huruf dan angka.' });
+      } else if (error.message.includes('Invalid login credentials')) {
         setMessage({ type: 'error', text: 'Username atau password salah.' });
+      } else if (error.message.includes('User already registered')) {
+        setMessage({ type: 'error', text: 'Username ini sudah digunakan.' });
+      } else if (error.message.includes('Signups not allowed')) {
+        setMessage({ type: 'error', text: 'Pendaftaran ditutup oleh server. Silakan gunakan Mode Tamu.' });
       } else {
         setMessage({ type: 'error', text: error.message || 'Terjadi kesalahan otentikasi.' });
       }
@@ -77,6 +105,7 @@ const Auth: React.FC = () => {
                   placeholder="username_anda"
                   required
                   autoCapitalize="none"
+                  autoComplete="username"
                 />
               </div>
             </div>
@@ -94,6 +123,7 @@ const Auth: React.FC = () => {
                   className="w-full bg-surfaceLight border border-line rounded-xl py-3 pl-12 pr-4 text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder-txt-dim"
                   placeholder="••••••••"
                   required
+                  autoComplete="current-password"
                 />
               </div>
             </div>
@@ -118,6 +148,23 @@ const Auth: React.FC = () => {
               )}
             </button>
           </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-line"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-surface px-2 text-txt-dim">Atau</span>
+            </div>
+          </div>
+
+          <button
+            onClick={onGuestLogin}
+            className="w-full bg-surfaceLight hover:bg-white/5 border border-line text-txt-muted hover:text-white font-semibold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 group hover:scale-[1.02] transform duration-200"
+          >
+            <UserCircle2 size={20} />
+            Masuk sebagai Tamu (Demo)
+          </button>
 
           <div className="mt-6 text-center">
             <p className="text-txt-muted text-sm">

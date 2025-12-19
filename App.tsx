@@ -11,6 +11,7 @@ import { supabase } from './services/supabaseClient';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
@@ -45,6 +46,8 @@ const App: React.FC = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      // Reset guest mode if user logs in
+      if (session) setIsGuest(false);
     });
 
     return () => subscription.unsubscribe();
@@ -52,10 +55,10 @@ const App: React.FC = () => {
 
   // 2. Fetch Data from Supabase when Logged In
   useEffect(() => {
-    if (session?.user) {
+    if (session?.user && !isGuest) {
       fetchUserData();
     }
-  }, [session]);
+  }, [session, isGuest]);
 
   const fetchUserData = async () => {
     if (!session?.user) return;
@@ -103,14 +106,14 @@ const App: React.FC = () => {
     // Optimistic Update
     setSessions([...sessions, newSession]);
 
-    if (session?.user) {
+    // Only save to DB if logged in and NOT guest
+    if (session?.user && !isGuest) {
       const { error } = await supabase.from('sessions').insert({
         ...newSession,
         user_id: session.user.id
       });
       if (error) {
         console.error("Failed to save session to DB:", error);
-        // Optional: Revert optimistic update or show toast
       }
     }
   };
@@ -118,14 +121,9 @@ const App: React.FC = () => {
   const handleUpdateModules = async (updatedModules: StudyModule[]) => {
     setModules(updatedModules);
 
-    if (session?.user) {
+    if (session?.user && !isGuest) {
       // Logic for syncing is complex (delete/insert or upsert).
       // For simplicity in this structure: Upsert each changed module.
-      
-      // 1. Find the module that changed (comparison)
-      // Since `updatedModules` replaces the state, we can iterate and upsert all 
-      // OR specifically identify the changed one.
-      // For bulk generation (from Planner), we assume clean slate or append.
       
       const payload = updatedModules.map(m => ({
         id: m.id,
@@ -151,8 +149,9 @@ const App: React.FC = () => {
     );
   }
 
-  if (!session) {
-    return <Auth />;
+  // Show Auth if no session AND not in Guest mode
+  if (!session && !isGuest) {
+    return <Auth onGuestLogin={() => setIsGuest(true)} />;
   }
 
   return (
@@ -174,6 +173,12 @@ const App: React.FC = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
+          {isGuest && (
+            <div className="max-w-7xl mx-auto mb-6 bg-blue-500/10 border border-blue-500/20 text-blue-400 p-3 rounded-lg text-sm flex items-center justify-center">
+              Mode Tamu Aktif: Data tidak akan disimpan ke database permanen.
+            </div>
+          )}
+          
           <div className="max-w-7xl mx-auto">
             {currentView === AppView.DASHBOARD && (
               <Dashboard 
