@@ -80,19 +80,71 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
   const handleDownloadPDF = (session: StudySession) => {
     if (!noteContentRef.current) return;
     
-    const element = noteContentRef.current;
+    // 1. CLONE
+    const originalElement = noteContentRef.current;
+    const clone = originalElement.cloneNode(true) as HTMLElement;
+
+    // 2. STYLE FOR PRINT (White bg, Black Text)
+    clone.style.backgroundColor = '#ffffff';
+    clone.style.color = '#000000';
+    clone.style.padding = '40px';
+    clone.style.width = '100%';
+
+    // Modify Typography classes on the clone
+    const article = clone.querySelector('article');
+    if (article) {
+      article.classList.remove('prose-invert'); // Remove dark mode inversion
+      article.classList.add('prose-slate'); // Use standard slate colors
+      
+      // Remove hardcoded white text classes
+      article.classList.remove('prose-headings:text-white');
+      article.classList.remove('prose-strong:text-white');
+      article.classList.remove('text-txt-muted');
+      
+      // Add hardcoded black/dark text classes
+      article.classList.add('prose-headings:text-black');
+      article.classList.add('prose-strong:text-black');
+      article.style.color = '#000000';
+    }
+
+    // Fix Tables
+    const tables = clone.querySelectorAll('table');
+    tables.forEach((t) => {
+       if (t instanceof HTMLElement) {
+          t.style.color = '#000000';
+          t.style.borderColor = '#cbd5e1'; 
+       }
+    });
+
+    const ths = clone.querySelectorAll('th');
+    ths.forEach((t) => {
+       if (t instanceof HTMLElement) {
+          t.style.backgroundColor = '#f1f5f9';
+          t.style.color = '#000000';
+          t.style.border = '1px solid #cbd5e1';
+       }
+    });
+    const tds = clone.querySelectorAll('td');
+    tds.forEach((t) => {
+       if (t instanceof HTMLElement) {
+          t.style.color = '#334155';
+          t.style.border = '1px solid #e2e8f0';
+       }
+    });
+
+    // 3. GENERATE
     const opt = {
-      margin: 10,
-      filename: `Riwayat_Belajar_${session.topic.replace(/\s+/g, '_')}.pdf`,
+      margin: 15,
+      filename: `Riwayat_Belajar_${session.topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, backgroundColor: '#141A25', useCORS: true }, 
+      html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true }, 
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     
     // @ts-ignore
     if (window.html2pdf) {
       // @ts-ignore
-      window.html2pdf().set(opt).from(element).save();
+      window.html2pdf().set(opt).from(clone).save();
     } else {
       alert("Library PDF belum dimuat. Coba refresh halaman.");
     }

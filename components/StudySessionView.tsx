@@ -236,21 +236,81 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   const handleDownloadPDF = () => {
     if (!contentRef.current) return;
     
-    const element = contentRef.current;
+    // 1. CLONE Element to avoid modifying the visible UI
+    const originalElement = contentRef.current;
+    const clone = originalElement.cloneNode(true) as HTMLElement;
+
+    // 2. APPLY "PRINTER FRIENDLY" STYLES TO CLONE
+    // Reset background and text color to standard document format
+    clone.style.backgroundColor = '#ffffff';
+    clone.style.color = '#000000';
+    clone.style.padding = '40px';
+    clone.style.width = '100%';
+    clone.style.maxWidth = '100%';
+
+    // Fix Typography: Switch from prose-invert (dark mode) to standard prose (light mode)
+    const article = clone.querySelector('article');
+    if (article) {
+      article.classList.remove('prose-invert');
+      article.classList.remove('prose-headings:text-white');
+      article.classList.remove('prose-strong:text-white');
+      // Add explicit dark colors for headers/strong text
+      article.classList.add('prose-headings:text-black');
+      article.classList.add('prose-strong:text-black');
+      article.classList.add('prose-slate');
+    }
+
+    // Fix Tables: Ensure borders and text are visible on white background
+    const tables = clone.querySelectorAll('table');
+    tables.forEach((t) => {
+       if (t instanceof HTMLElement) {
+          t.style.color = '#000000';
+          t.style.borderCollapse = 'collapse';
+          t.style.width = '100%';
+          t.style.borderColor = '#cbd5e1'; // slate-300
+       }
+    });
+
+    const ths = clone.querySelectorAll('th');
+    ths.forEach((t) => {
+       if (t instanceof HTMLElement) {
+          t.style.backgroundColor = '#f1f5f9'; // slate-100
+          t.style.color = '#0f172a'; // slate-900
+          t.style.border = '1px solid #cbd5e1';
+       }
+    });
+
+    const tds = clone.querySelectorAll('td');
+    tds.forEach((t) => {
+       if (t instanceof HTMLElement) {
+          t.style.color = '#334155'; // slate-700
+          t.style.border = '1px solid #e2e8f0';
+       }
+    });
+
+    // Clean up any other "text-white" or light classes
+    const allElements = clone.querySelectorAll('*');
+    allElements.forEach((el) => {
+      if (el instanceof HTMLElement) {
+         if (el.classList.contains('text-white') || el.classList.contains('text-txt-muted')) {
+            el.style.color = '#000000';
+         }
+      }
+    });
+
+    // 3. GENERATE PDF FROM CLONE
     const opt = {
-      margin: 10,
-      filename: `StudyFlow_Notes_${topic.replace(/\s+/g, '_')}.pdf`,
+      margin: 15,
+      filename: `StudyFlow_Materi_${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, backgroundColor: '#141A25', useCORS: true }, 
+      html2canvas: { scale: 2, backgroundColor: '#ffffff', useCORS: true }, 
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     
-    // We want to temporarily make text black for printing if preferred, but for now
-    // let's keep the dark theme style as it looks good.
     // @ts-ignore
     if (window.html2pdf) {
       // @ts-ignore
-      window.html2pdf().set(opt).from(element).save();
+      window.html2pdf().set(opt).from(clone).save();
     } else {
       alert("Library PDF belum dimuat. Coba refresh halaman.");
     }
