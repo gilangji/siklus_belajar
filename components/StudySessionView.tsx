@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { generateStudyNotes, generateQuiz, askStudyTutor } from '../services/geminiService';
 import { StudySession, QuizQuestion } from '../types';
-import { Loader2, Youtube, Clock, BookOpen, ArrowRight, Save, PlayCircle, Timer, Coffee, Play, PauseCircle, Upload, FileText, X, Settings2, BarChart3, PenTool, MessageSquare, Send, ChevronRight, ChevronLeft, Hourglass } from 'lucide-react';
+import { Loader2, Youtube, Clock, BookOpen, ArrowRight, Save, PlayCircle, Timer, Coffee, Play, PauseCircle, Upload, FileText, X, Settings2, BarChart3, PenTool, MessageSquare, Send, ChevronRight, ChevronLeft, Hourglass, Download } from 'lucide-react';
 
 interface StudySessionViewProps {
   initialTopic?: string;
@@ -50,6 +50,7 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   const [score, setScore] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (initialTopic) setTopic(initialTopic);
@@ -230,6 +231,29 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
     };
     onSaveSession(session);
     setStep('RESULT');
+  };
+
+  const handleDownloadPDF = () => {
+    if (!contentRef.current) return;
+    
+    const element = contentRef.current;
+    const opt = {
+      margin: 10,
+      filename: `StudyFlow_Notes_${topic.replace(/\s+/g, '_')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, backgroundColor: '#141A25', useCORS: true }, 
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    // We want to temporarily make text black for printing if preferred, but for now
+    // let's keep the dark theme style as it looks good.
+    // @ts-ignore
+    if (window.html2pdf) {
+      // @ts-ignore
+      window.html2pdf().set(opt).from(element).save();
+    } else {
+      alert("Library PDF belum dimuat. Coba refresh halaman.");
+    }
   };
 
   // --- Calculate Progress for Timer UI ---
@@ -441,6 +465,14 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
                <div className="h-8 w-px bg-line mx-2 hidden md:block"></div>
 
                <div className="flex gap-2">
+                 <button 
+                   onClick={handleDownloadPDF}
+                   className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-surfaceLight border border-line text-txt-muted hover:text-white transition-colors text-sm font-semibold"
+                   title="Simpan Catatan sebagai PDF"
+                 >
+                   <Download size={16} />
+                 </button>
+
                  <button
                   onClick={() => {
                     // Reset session timer when switching modes for cleaner counting
@@ -510,7 +542,7 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
             )}
             
             {/* Markdown Content */}
-            <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-markdown">
+            <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-markdown" ref={contentRef}>
               <article className="prose prose-invert prose-lg max-w-none prose-headings:text-white prose-a:text-primary prose-strong:text-white prose-code:text-accent prose-code:bg-surfaceLight prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surfaceLight prose-pre:border prose-pre:border-line">
                 <ReactMarkdown 
                   remarkPlugins={[remarkGfm]}

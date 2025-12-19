@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { UserProgress, StudySession, AppView } from '../types';
-import { Trophy, Clock, Target, Book, TrendingUp, PieChart, Compass, Map, Zap, BrainCircuit, ArrowRight, Lightbulb, ChevronRight, PlayCircle, RotateCw, FileText, X, Eye } from 'lucide-react';
+import { Trophy, Clock, Target, Book, TrendingUp, PieChart, Compass, Map, Zap, BrainCircuit, ArrowRight, Lightbulb, ChevronRight, PlayCircle, RotateCw, FileText, X, Eye, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -15,6 +15,7 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView, onStartStudy }) => {
   const [activeGuide, setActiveGuide] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<StudySession | null>(null);
+  const noteContentRef = useRef<HTMLDivElement>(null);
 
   // Get the most recent session
   const lastSession = sessions.length > 0 
@@ -74,6 +75,27 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
       );
     }
     return null;
+  };
+
+  const handleDownloadPDF = (session: StudySession) => {
+    if (!noteContentRef.current) return;
+    
+    const element = noteContentRef.current;
+    const opt = {
+      margin: 10,
+      filename: `Riwayat_Belajar_${session.topic.replace(/\s+/g, '_')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, backgroundColor: '#141A25', useCORS: true }, 
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    // @ts-ignore
+    if (window.html2pdf) {
+      // @ts-ignore
+      window.html2pdf().set(opt).from(element).save();
+    } else {
+      alert("Library PDF belum dimuat. Coba refresh halaman.");
+    }
   };
 
   return (
@@ -332,7 +354,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
              </div>
 
              {/* Content Scrollable */}
-             <div className="overflow-y-auto p-8 custom-markdown flex-1 bg-surface">
+             <div className="overflow-y-auto p-8 custom-markdown flex-1 bg-surface" ref={noteContentRef}>
                 {/* Result Summary */}
                 <div className="flex gap-4 mb-8">
                    <div className="flex-1 bg-surfaceLight/50 p-4 rounded-xl border border-line">
@@ -375,23 +397,35 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
              </div>
 
              {/* Footer Actions */}
-             <div className="p-6 border-t border-line bg-surfaceLight/30 shrink-0 flex justify-end gap-3">
-               <button 
-                 onClick={() => setSelectedSession(null)}
-                 className="px-5 py-2.5 rounded-xl border border-line text-txt-muted hover:text-white hover:bg-white/5 font-semibold transition-all"
-               >
-                 Tutup
-               </button>
-               <button 
-                 onClick={() => {
-                   onStartStudy(selectedSession.topic);
-                   setSelectedSession(null);
-                 }}
-                 className="px-6 py-2.5 rounded-xl bg-primary hover:bg-primaryHover text-white font-bold transition-all shadow-lg shadow-primary/25 flex items-center gap-2"
-               >
-                 <RotateCw size={18} />
-                 {(selectedSession.quizScore || 0) < 70 ? 'Pelajari Ulang' : 'Pendalaman Materi'}
-               </button>
+             <div className="p-6 border-t border-line bg-surfaceLight/30 shrink-0 flex justify-between gap-3">
+               <div>
+                  <button 
+                    onClick={() => handleDownloadPDF(selectedSession)}
+                    className="px-4 py-2.5 rounded-xl border border-line text-txt-muted hover:text-white hover:bg-white/5 font-semibold transition-all flex items-center gap-2 text-sm"
+                  >
+                    <Download size={16} />
+                    Unduh PDF
+                  </button>
+               </div>
+               
+               <div className="flex gap-3">
+                  <button 
+                    onClick={() => setSelectedSession(null)}
+                    className="px-5 py-2.5 rounded-xl border border-line text-txt-muted hover:text-white hover:bg-white/5 font-semibold transition-all"
+                  >
+                    Tutup
+                  </button>
+                  <button 
+                    onClick={() => {
+                      onStartStudy(selectedSession.topic);
+                      setSelectedSession(null);
+                    }}
+                    className="px-6 py-2.5 rounded-xl bg-primary hover:bg-primaryHover text-white font-bold transition-all shadow-lg shadow-primary/25 flex items-center gap-2"
+                  >
+                    <RotateCw size={18} />
+                    Pelajari Topik Ini Lagi
+                  </button>
+               </div>
              </div>
           </div>
         </div>
