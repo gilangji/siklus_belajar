@@ -92,7 +92,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Option 1 */}
             <div 
-              className={`group relative p-5 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden ${activeGuide === 'plan' ? 'bg-primary/10 border-primary shadow-[0_0_20px_rgba(92,101,230,0.2)]' : 'bg-surface border-line hover:border-white/20'}`}
+              className={`group relative p-5 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden transform hover:scale-[1.03] ${activeGuide === 'plan' ? 'bg-primary/10 border-primary shadow-[0_0_20px_rgba(92,101,230,0.2)]' : 'bg-surface border-line hover:border-white/20'}`}
               onClick={() => setActiveGuide('plan')}
             >
               <div className="flex items-start justify-between mb-4">
@@ -118,7 +118,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
 
             {/* Option 2 */}
             <div 
-              className={`group relative p-5 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden ${activeGuide === 'study' ? 'bg-primary/10 border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.1)]' : 'bg-surface border-line hover:border-white/20'}`}
+              className={`group relative p-5 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden transform hover:scale-[1.03] ${activeGuide === 'study' ? 'bg-primary/10 border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.1)]' : 'bg-surface border-line hover:border-white/20'}`}
               onClick={() => setActiveGuide('study')}
             >
               <div className="flex items-start justify-between mb-4">
@@ -144,7 +144,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
 
             {/* Option 3 */}
             <div 
-              className={`group relative p-5 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden ${activeGuide === 'quiz' ? 'bg-primary/10 border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.1)]' : 'bg-surface border-line hover:border-white/20'}`}
+              className={`group relative p-5 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden transform hover:scale-[1.03] ${activeGuide === 'quiz' ? 'bg-primary/10 border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.1)]' : 'bg-surface border-line hover:border-white/20'}`}
               onClick={() => setActiveGuide('quiz')}
             >
               <div className="flex items-start justify-between mb-4">
@@ -179,7 +179,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
           { icon: Trophy, label: "Skor Rata-rata", value: `${Math.round(progress.averageQuizScore)}%`, color: "text-purple-400" },
           { icon: Target, label: "Level", value: progress.topicsLearned > 20 ? 'Mahir' : progress.topicsLearned > 10 ? 'Menengah' : 'Pemula', color: "text-orange-400" }
         ].map((stat, idx) => (
-          <div key={idx} className="glass-card p-6 rounded-xl flex items-center space-x-4 hover:bg-white/5 transition-colors">
+          <div key={idx} className="glass-card p-6 rounded-xl flex items-center space-x-4 hover:bg-white/5 transition-all duration-300 hover:scale-[1.02]">
             <div className={`p-3 rounded-lg bg-surfaceLight border border-line ${stat.color}`}>
               <stat.icon size={22} />
             </div>
@@ -195,7 +195,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Chart 1: Time per Topic */}
-        <div className="glass-card p-6 rounded-xl flex flex-col h-[400px]">
+        <div className="glass-card p-6 rounded-xl flex flex-col h-[400px] hover:border-white/10 transition-colors">
           <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
             <PieChart size={18} className="text-primary" /> Distribusi Fokus
           </h3>
@@ -235,7 +235,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView 
         </div>
 
         {/* Chart 2: Score Trend */}
-        <div className="glass-card p-6 rounded-xl flex flex-col h-[400px]">
+        <div className="glass-card p-6 rounded-xl flex flex-col h-[400px] hover:border-white/10 transition-colors">
           <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
             <TrendingUp size={18} className="text-accent" /> Performa
           </h3>

@@ -59,7 +59,7 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy }) 
         <div>
            <button 
             onClick={() => setShowWizard(true)}
-            className="flex items-center gap-2 bg-primary hover:bg-primaryHover text-white px-6 py-3 rounded-lg shadow-lg shadow-primary/25 transition-all font-semibold disabled:opacity-70"
+            className="flex items-center gap-2 bg-primary hover:bg-primaryHover text-white px-6 py-3 rounded-lg shadow-lg shadow-primary/25 transition-all font-semibold disabled:opacity-70 hover:scale-[1.03] transform duration-200"
             disabled={loading}
           >
             {loading ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
@@ -136,7 +136,7 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy }) 
                 <button 
                   onClick={() => handleGenerate(true)}
                   disabled={!customTopic.trim()}
-                  className="w-full bg-primary hover:bg-primaryHover text-white py-3.5 rounded-lg font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 hover:shadow-primary/40"
+                  className="w-full bg-primary hover:bg-primaryHover text-white py-3.5 rounded-lg font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-[1.02]"
                 >
                   <Sparkles size={18} />
                   Generate Roadmap
@@ -177,7 +177,7 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy }) 
           <div 
             key={module.id} 
             className={`glass-card rounded-xl transition-all duration-300 group ${
-              module.completed ? 'opacity-70 grayscale-[0.5]' : 'hover:border-primary/50'
+              module.completed ? 'opacity-70 grayscale-[0.5]' : 'hover:border-primary/50 hover:scale-[1.02]'
             }`}
           >
             <div className="p-6 md:p-8">
@@ -207,7 +207,7 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy }) 
                           <button
                             key={i}
                             onClick={() => onStartStudy(topic)}
-                            className="bg-surfaceLight hover:bg-primary hover:text-white border border-line hover:border-primary/50 text-txt-muted px-4 py-2 rounded-lg text-sm transition-all cursor-pointer font-medium"
+                            className="bg-surfaceLight hover:bg-primary hover:text-white border border-line hover:border-primary/50 text-txt-muted px-4 py-2 rounded-lg text-sm transition-all cursor-pointer font-medium hover:scale-105 transform duration-150"
                           >
                             {topic}
                           </button>

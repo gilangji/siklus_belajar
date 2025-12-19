@@ -98,7 +98,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
                     <button 
                       key={i} 
                       onClick={() => setTopic(t)}
-                      className="text-xs bg-surfaceLight hover:bg-white/10 text-txt-muted hover:text-white px-3 py-1 rounded-full transition border border-line"
+                      className="text-xs bg-surfaceLight hover:bg-white/10 text-txt-muted hover:text-white px-3 py-1 rounded-full transition border border-line hover:scale-105"
                     >
                       {t}
                     </button>
@@ -139,7 +139,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
               <button
                 onClick={() => startReview('FLASHCARDS')}
                 disabled={loading || !topic}
-                className="relative group p-6 border border-line rounded-xl hover:border-primary/50 bg-surfaceLight/30 hover:bg-surfaceLight transition-all text-left overflow-hidden"
+                className="relative group p-6 border border-line rounded-xl hover:border-primary/50 bg-surfaceLight/30 hover:bg-surfaceLight transition-all text-left overflow-hidden transform hover:scale-[1.03]"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="relative z-10">
@@ -154,7 +154,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
               <button
                 onClick={() => startReview('QUIZ')}
                 disabled={loading || !topic}
-                className="relative group p-6 border border-line rounded-xl hover:border-accent/50 bg-surfaceLight/30 hover:bg-surfaceLight transition-all text-left overflow-hidden"
+                className="relative group p-6 border border-line rounded-xl hover:border-accent/50 bg-surfaceLight/30 hover:bg-surfaceLight transition-all text-left overflow-hidden transform hover:scale-[1.03]"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-accent/0 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 {usePersonalNotes && matchedSession && (
@@ -246,7 +246,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
                  setMode('SELECT'); // Done
                }
              }}
-             className="px-8 py-3 rounded-full bg-white text-black hover:bg-gray-200 font-bold transition-all shadow-lg shadow-white/10"
+             className="px-8 py-3 rounded-full bg-white text-black hover:bg-gray-200 font-bold transition-all shadow-lg shadow-white/10 hover:scale-[1.03]"
            >
              {currentCardIndex < flashcards.length - 1 ? 'Berikutnya' : 'Selesai'}
            </button>
@@ -266,7 +266,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
               <span className="text-2xl text-txt-dim">%</span>
            </div>
            <p className="text-txt-muted mb-8 relative z-10">Anda menjawab <strong className="text-white">{score}</strong> dari {quizQuestions.length} pertanyaan dengan benar.</p>
-           <button onClick={() => setMode('SELECT')} className="px-8 py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors relative z-10 w-full">Kembali ke Menu</button>
+           <button onClick={() => setMode('SELECT')} className="px-8 py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors relative z-10 w-full hover:scale-[1.03]">Kembali ke Menu</button>
         </div>
        );
     }
@@ -297,7 +297,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
                       setQuizComplete(true);
                     }
                  }}
-                 className="w-full text-left p-5 rounded-xl border border-line bg-surfaceLight/30 hover:border-primary hover:bg-primary/10 text-txt-muted hover:text-white transition-all group"
+                 className="w-full text-left p-5 rounded-xl border border-line bg-surfaceLight/30 hover:border-primary hover:bg-primary/10 text-txt-muted hover:text-white transition-all group hover:scale-[1.01] transform"
                >
                  <div className="flex items-center gap-4">
                     <span className="w-6 h-6 rounded flex items-center justify-center border border-line text-xs font-bold text-txt-dim group-hover:border-primary group-hover:text-primary transition-colors">

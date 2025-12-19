@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { Loader2, Mail, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Loader2, User, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
 
 const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
@@ -14,23 +14,34 @@ const Auth: React.FC = () => {
     setLoading(true);
     setMessage(null);
 
+    // Create a dummy email address based on the username for Supabase compatibility
+    // Sanitize username to ensure it's valid for an email string
+    const sanitizedUsername = username.trim().toLowerCase().replace(/\s+/g, '');
+    const dummyEmail = `${sanitizedUsername}@studyflow.user`;
+
     try {
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({
-          email,
+          email: dummyEmail,
           password,
         });
         if (error) throw error;
-        setMessage({ type: 'success', text: 'Konfirmasi pendaftaran telah dikirim ke email Anda.' });
+        setMessage({ type: 'success', text: 'Akun berhasil dibuat! Silakan login.' });
+        setIsSignUp(false); // Switch to login immediately since no email verification needed for dummy
       } else {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: dummyEmail,
           password,
         });
         if (error) throw error;
       }
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Terjadi kesalahan otentikasi.' });
+      // Improve error message if it's about invalid login
+      if (error.message.includes('Invalid login credentials')) {
+        setMessage({ type: 'error', text: 'Username atau password salah.' });
+      } else {
+        setMessage({ type: 'error', text: error.message || 'Terjadi kesalahan otentikasi.' });
+      }
     } finally {
       setLoading(false);
     }
@@ -53,18 +64,19 @@ const Auth: React.FC = () => {
         <div className="glass-card p-8 rounded-2xl border border-line shadow-2xl">
           <form onSubmit={handleAuth} className="space-y-5">
             <div>
-              <label className="block text-xs font-bold uppercase text-txt-dim mb-1.5 ml-1">Email</label>
+              <label className="block text-xs font-bold uppercase text-txt-dim mb-1.5 ml-1">Username</label>
               <div className="relative">
                 <div className="absolute left-4 top-3.5 text-txt-dim">
-                  <Mail size={18} />
+                  <User size={18} />
                 </div>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="w-full bg-surfaceLight border border-line rounded-xl py-3 pl-12 pr-4 text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder-txt-dim"
-                  placeholder="nama@email.com"
+                  placeholder="username_anda"
                   required
+                  autoCapitalize="none"
                 />
               </div>
             </div>
@@ -95,7 +107,7 @@ const Auth: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary hover:bg-primaryHover text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-primary/25 flex items-center justify-center gap-2 group"
+              className="w-full bg-primary hover:bg-primaryHover text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-primary/25 flex items-center justify-center gap-2 group hover:scale-[1.02] transform duration-200"
             >
               {loading ? (
                 <Loader2 className="animate-spin" />
