@@ -145,7 +145,7 @@ export const generateStudyNotes = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', // Using Pro for better multimodal reasoning
+      model: 'gemini-3-flash-preview', // Switched from gemini-3-pro-preview to avoid quota limits
       contents: { parts }, // Send parts array
       config: {
         tools: referenceLink ? [{ googleSearch: {} }] : undefined,
