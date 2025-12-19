@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StudyFlow - Master Anything</title>
+    <!-- IMPORTANT: Added ?plugins=typography to enable prose classes for Markdown -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              // Deep background colors
+              void: '#030508', 
+              surface: '#0B0F17',
+              surfaceLight: '#141A25',
+              
+              // Accents (Blurple/Indigo)
+              primary: '#5c65e6',
+              primaryHover: '#4b54d1',
+              accent: '#818cf8',
+              
+              // Text
+              txt: {
+                main: '#f8fafc',
+                muted: '#94a3b8',
+                dim: '#475569'
+              },
+              
+              // Borders
+              line: 'rgba(255, 255, 255, 0.08)'
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            backgroundImage: {
+              'hero-glow': 'radial-gradient(circle at 50% -10%, rgba(92, 101, 230, 0.15) 0%, rgba(0, 0, 0, 0) 50%)',
+              'card-gradient': 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #030508;
+        color: #f8fafc;
+        /* Technical Grid Background + Glow */
+        background-image: 
+          radial-gradient(circle at 50% 0%, #1e1b4b 0%, transparent 60%),
+          linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), 
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 100% 100%, 40px 40px, 40px 40px; /* 40px grid size */
+        background-attachment: fixed;
+        min-height: 100vh;
+      }
+      
+      /* Glassmorphism Utilities */
+      .glass-panel {
+        background: rgba(11, 15, 23, 0.6);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      
+      .glass-card {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(8px);
+      }
+
+      /* Animations */
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      .animate-fade-in {
+        animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #334155; 
+        border-radius: 10px;
+        border: 2px solid #030508; /* Padding effect */
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #475569; 
+      }
+      
+      /* 3D Flip Effects */
+      .perspective-1000 {
+        perspective: 1000px;
+      }
+      .preserve-3d {
+        transform-style: preserve-3d;
+      }
+      .backface-hidden {
+        backface-visibility: hidden;
+      }
+      .rotate-y-180 {
+        transform: rotateY(180deg);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "react-markdown": "https://esm.sh/react-markdown@^10.1.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "recharts": "https://esm.sh/recharts@^3.6.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
