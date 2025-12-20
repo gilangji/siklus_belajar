@@ -41,8 +41,6 @@ const generateContentWithRetry = async (ai: GoogleGenAI, params: any, retries = 
       
       console.warn(`Rate limit hit. Retrying in ${waitTime}ms... (${retries} retries left)`);
       
-      // If wait time is reasonable (< 60s), we wait and retry. 
-      // Otherwise we throw to let user know they need to wait a long time.
       if (waitTime < 60000) {
         await delay(waitTime);
         return generateContentWithRetry(ai, params, retries - 1);
@@ -80,25 +78,39 @@ export const generateSyllabus = async (customConfig?: { topic: string, duration:
   };
 
   let prompt = `
-    Buatlah peta jalan belajar sistematis 4 fase yang komprehensif untuk "Belajar Efektif & Berpikir Kritis".
+    Bertindaklah sebagai Konsultan Kurikulum Pendidikan Tinggi untuk persiapan beasiswa elite (seperti LPDP/Ivy League).
     
-    Kurikulum harus:
-    1. Progresif (Dasar -> Lanjutan).
-    2. Siklus (Konsep -> Praktek -> Tinjauan).
-    3. Kembalikan tepat 4 modul (fase).
-    4. Gunakan Bahasa Indonesia.
+    TUGAS:
+    Buat peta jalan penguasaan materi (Mastery Roadmap) untuk topik "Belajar Efektif & Berpikir Kritis".
+    
+    KRITERIA KURIKULUM:
+    1. **High-Yield Topics Only:** Jangan sertakan materi "filler" atau terlalu dasar. Fokus pada konsep fundamental yang KRUSIAL dan KONTEMPORER.
+    2. **Struktur:** 4 Fase Logis (Fase 1: Fondasi Kritis -> Fase 4: Sintesis & Evaluasi).
+    3. **Judul Modul:** Gunakan judul yang akademis dan berbobot.
+    4. **Bahasa:** Gunakan Bahasa Indonesia formal dan intelektual.
   `;
 
   if (customConfig) {
     prompt = `
-      Buatlah jadwal belajar sistematis kustom berdasarkan preferensi pengguna ini:
-      - Topik Utama/Tujuan: ${customConfig.topic}
-      - Ketersediaan Waktu: ${customConfig.duration}
-      - Intensitas/Gaya Belajar: ${customConfig.intensity}
+      Bertindaklah sebagai Konsultan Kurikulum Pendidikan Tinggi & Riset.
       
-      Buat peta jalan terstruktur. Pecah ini menjadi 4 fase logis (diwakili sebagai 'week' dalam skema) yang bergerak dari dasar hingga penguasaan.
-      Pastikan ada campuran teori dan aplikasi praktis.
-      PENTING: Gunakan Bahasa Indonesia untuk semua Judul, Deskripsi, dan Topik.
+      KONTEKS PENGGUNA:
+      - Topik Target: ${customConfig.topic}
+      - Tujuan: Penguasaan Mendalam (Deep Mastery)
+      - Gaya: ${customConfig.intensity}
+      
+      TUGAS:
+      Rancang kurikulum 4 fase yang sangat strategis.
+      
+      INSTRUKSI KHUSUS:
+      1. **Prioritas Materi:** Identifikasi konsep-konsep "Paling Mahal" atau "Paling Penting" dalam topik ini. Abaikan trivia. Fokus pada inti keilmuan yang mendalam.
+      2. **Judul & Deskripsi:** Harus terdengar profesional, meyakinkan, dan mencerminkan kedalaman materi. 
+      3. **Alur:** 
+         - Fase 1: Prinsip Fundamental & Teori Utama.
+         - Fase 2: Mekanisme Kompleks & Analisis.
+         - Fase 3: Aplikasi Kritis & Studi Kasus.
+         - Fase 4: Integrasi, Inovasi, & Masa Depan Topik.
+      4. Gunakan Bahasa Indonesia.
     `;
   }
 
@@ -109,13 +121,12 @@ export const generateSyllabus = async (customConfig?: { topic: string, duration:
       config: {
         responseMimeType: "application/json",
         responseSchema: schema,
-        systemInstruction: "Anda adalah perancang kurikulum ahli. Buat jalur pembelajaran yang terstruktur dan progresif dalam Bahasa Indonesia."
+        systemInstruction: "Anda adalah arsitek kurikulum akademik tingkat lanjut. Anda membenci kedangkalan. Anda menyusun rencana belajar yang padat berisi."
       }
     });
 
     const data = JSON.parse(response.text || "{}") as GeneratedSyllabusResponse;
     
-    // Transform to internal type with IDs
     return data.modules.map((mod, index) => ({
       ...mod,
       id: `module-${index}-${Date.now()}`,
@@ -128,61 +139,74 @@ export const generateSyllabus = async (customConfig?: { topic: string, duration:
   }
 };
 
-// 2. Generate Study Notes based on Topic, Link, File, and Preferences
+// 2. Generate Study Notes based on Topic
 export const generateStudyNotes = async (
   topic: string, 
   referenceLink?: string,
   fileData?: { mimeType: string, data: string },
   customInstructions?: string,
-  difficulty: string = "Menengah"
+  difficulty: string = "Sangat Mendalam"
 ): Promise<string> => {
   const ai = getAIClient();
 
+  // Prompt yang diperbarui untuk kedalaman materi & format tanpa "Bab"
   let basePrompt = `
-    Saya ingin Anda bertindak sebagai **Profesor Akademik Penulis Buku Teks**. 
-    Topik saat ini: "${topic}".
-    Tingkat Kedalaman: ${difficulty} (Sangat Mendalam).
+    PERAN: Anda adalah **Pakar Riset Utama & Akademisi Senior** di bidang ini.
+    TOPIK FOKUS: "${topic}".
+    TARGET AUDIENCE: Kandidat PhD atau Persiapan Beasiswa Elite (LPDP).
     
     TUGAS UTAMA:
-    Buat materi pembelajaran yang **SANGAT PANJANG, MENDALAM, DAN KOMPREHENSIF** (setara dengan satu bab penuh buku teks). Jangan membuat ringkasan pendek. Gali setiap sub-topik secara detail.
+    Susun sebuah **Diktat Pembelajaran Mendalam (Deep Dive)** yang komprehensif mengenai topik tersebut.
     
-    STRUKTUR WAJIB:
-    1. **Pendahuluan Menyeluruh**: Latar belakang sejarah, definisi, dan signifikansi topik.
-    2. **Konsep & Teori Inti**: Penjelasan panjang lebar tentang mekanisme atau teori di baliknya.
-    3. **Tabel Perbandingan (WAJIB)**: Buat Tabel Markdown yang membandingkan minimal 2 konsep/metode/pendekatan dalam topik ini. Gunakan kolom seperti [Aspek | Konsep A | Konsep B | Keterangan].
-    4. **Studi Kasus / Contoh Penerapan**: Skenario nyata yang mendetail (bukan poin-poin singkat).
-    5. **Analisis Kritis**: Pro dan kontra, perdebatan akademik, atau tantangan saat ini.
-    6. **Kesimpulan & Poin Kunci**.
+    ATURAN FORMAT (SANGAT PENTING):
+    1. **DILARANG KERAS** menggunakan kata "Bab 1", "Chapter I", "Bagian 1", atau penomoran bab sejenisnya.
+    2. Gunakan **Judul Besar** (Markdown #) untuk judul materi.
+    3. Gunakan **Sub-Judul** (Markdown ## dan ###) untuk membagi bagian.
+    4. Format harus bersih, langsung pada hierarki topik.
 
-    FORMATTING:
-    - Gunakan **Tabel Markdown** untuk menyajikan data terstruktur.
-    - Gunakan **Bold** untuk istilah kunci.
-    - Tulis minimal 1500 kata jika memungkinkan.
-    - Gunakan Bahasa Indonesia yang akademis namun mudah dipahami.
+    STANDAR KONTEN:
+    1. **Analisis Kritis:** Jangan hanya mendefinisikan. Analisis *mengapa* hal itu terjadi, *bagaimana* mekanismenya, dan *apa* implikasinya.
+    2. **Perspektif Multidimensi:** Tinjau topik dari berbagai sudut pandang (teoritis, praktis, etis, historis).
+    3. **Kedalaman:** Setiap sub-bagian harus dibahas secara tuntas, detail, dan panjang. Hindari poin-poin singkat (bullet points) jika penjelasan naratif lebih baik.
+    4. **Relevansi:** Pastikan materi benar-benar 100% relevan dengan topik "${topic}". Jangan melebar ke hal umum.
+
+    STRUKTUR YANG DIHARAPKAN:
+    # [Judul Besar Topik - Gunakan Istilah Akademis]
     
-    ${customInstructions ? `INSTRUKSI KHUSUS PENGGUNA: "${customInstructions}"` : ""}
+    ## [Sub-Judul 1: Fondasi Filosofis/Teoritis]
+    (Jelaskan sejarah pemikiran, teori dasar, dan pergeseran paradigma terkait topik ini secara mendalam)
+
+    ## [Sub-Judul 2: Mekanisme Inti & Analisis Struktural]
+    (Jelaskan "How it works" secara sangat detail. Bongkar komponen-komponennya)
+
+    ## [Tabel Komparasi Kritis]
+    (Wajib sertakan Tabel Markdown yang membandingkan pendekatan/teori berbeda dalam topik ini secara head-to-head)
+
+    ## [Sub-Judul 3: Isu Kontemporer & Studi Kasus]
+    (Bahas perdebatan saat ini, tantangan modern, atau contoh kasus nyata yang kompleks)
+
+    ## [Sintesis & Kesimpulan Kritis]
+    (Rangkuman yang menyatukan semua poin menjadi wawasan baru)
+
+    ${customInstructions ? `INSTRUKSI TAMBAHAN DARI PENGGUNA: "${customInstructions}"` : ""}
   `;
 
   let promptContext = basePrompt;
   const parts: any[] = [];
 
-  // Handle Link Logic
   if (referenceLink) {
     promptContext += `\n
-      Saya memiliki tautan referensi: ${referenceLink}.
-      1. Gunakan Google Search untuk mengakses konten tautan ini secara mendalam. 
-      2. Ekstrak detail spesifik, statistik, atau argumen utama dari tautan tersebut.
-      3. Integrasikan informasi ini ke dalam struktur bab di atas.
+      REFERENSI EKSTERNAL: ${referenceLink}.
+      Instruksi: Akses konten tautan tersebut (melalui Google Search). Integrasikan data, argumen, atau temuan spesifik dari tautan tersebut ke dalam analisis Anda. Jadikan materi ini lebih kaya dengan data eksternal tersebut.
     `;
   }
 
-  // Handle File Logic
   if (fileData) {
     promptContext += `\n
-      Saya juga telah mengunggah sebuah dokumen/gambar sebagai materi sumber.
-      Analisis dokumen ini secara menyeluruh. Jangan lewatkan detail kecil. Gunakan ini sebagai fondasi utama materi.
+      MATERI SUMBER (FILE):
+      Saya menyertakan file dokumen/gambar. Analisis file ini sebagai sumber primer (Primary Source).
+      Materi yang Anda buat HARUS berpusat pada isi file ini, lalu diperluas dengan pengetahuan akademis Anda.
     `;
-    // Add the file as an inline part
     parts.push({
       inlineData: {
         mimeType: fileData.mimeType,
@@ -191,24 +215,24 @@ export const generateStudyNotes = async (
     });
   }
 
-  // Add the text prompt as the last part
   parts.push({ text: promptContext });
 
   try {
     const response = await generateContentWithRetry(ai, {
       model: 'gemini-3-flash-preview', 
-      contents: { parts }, // Send parts array
+      contents: { parts },
       config: {
         tools: referenceLink ? [{ googleSearch: {} }] : undefined,
-        systemInstruction: "Anda adalah Profesor Universitas yang sedang menulis buku teks. Anda sangat menyukai penjelasan yang panjang, mendetail, dan menggunakan tabel untuk data. Jangan pernah memberikan jawaban pendek."
+        // System instruction diperkuat untuk memaksa format
+        systemInstruction: "Anda adalah Akademisi Senior. Gaya penulisan Anda: Formal, Padat, Kritis, dan Mendalam. Anda TIDAK PERNAH menggunakan kata 'Bab' atau 'Chapter' dalam struktur judul, melainkan langsung menggunakan Topik sebagai Judul."
       }
     });
 
-    return response.text || "Gagal membuat catatan. Coba lagi.";
+    return response.text || "Gagal membuat materi mendalam. Silakan coba lagi.";
 
   } catch (error) {
     console.error("Error generating notes:", error);
-    throw error; // Rethrow so UI knows it failed
+    throw error;
   }
 };
 
@@ -240,15 +264,18 @@ export const generateQuiz = async (topic: string, notesContext?: string): Promis
   };
 
   const context = notesContext 
-    ? `Berdasarkan catatan ini: ${notesContext.substring(0, 20000)}` 
-    : `Berdasarkan pengetahuan umum tentang "${topic}"`;
+    ? `Berdasarkan materi berikut: ${notesContext.substring(0, 25000)}` 
+    : `Berdasarkan pengetahuan tingkat lanjut tentang "${topic}"`;
 
   const prompt = `
     ${context}
     
-    Buatlah kuis pilihan ganda 5 pertanyaan untuk menguji pemahaman tentang ${topic}.
-    Pastikan pertanyaan menguji pemahaman dan aplikasi, bukan hanya hafalan.
-    Gunakan Bahasa Indonesia untuk Pertanyaan, Opsi, dan Penjelasan.
+    TUGAS:
+    Buat 5 pertanyaan kuis tingkat "Analisis" atau "Evaluasi" (HOTS - Higher Order Thinking Skills).
+    Hindari pertanyaan hafalan tahun atau definisi sederhana.
+    Pertanyaan harus menguji pemahaman konsep yang mendalam atau aplikasi teori.
+    
+    Format: JSON.
   `;
 
   try {
@@ -266,7 +293,7 @@ export const generateQuiz = async (topic: string, notesContext?: string): Promis
 
   } catch (error) {
     console.error("Error generating quiz:", error);
-    return []; // Return empty quiz on fail, don't break app
+    return [];
   }
 };
 
@@ -293,12 +320,9 @@ export const generateFlashcards = async (topic: string): Promise<Flashcard[]> =>
   };
 
   const prompt = `
-    Buatlah 8 flashcard berkualitas tinggi untuk topik: "${topic}".
-    
-    - Depan (Front): Istilah, konsep, atau skenario/pertanyaan spesifik.
-    - Belakang (Back): Definisi, penjelasan, atau jawaban.
-    - Pertahankan bagian "Belakang" ringkas (di bawah 50 kata) untuk tinjauan yang efektif.
-    - Gunakan Bahasa Indonesia.
+    Buat 8 flashcard untuk topik "${topic}".
+    Fokus pada: Konsep Kunci, Istilah Teknis, atau Hubungan Sebab-Akibat.
+    Level: Mahir/Akademik.
   `;
 
   try {
@@ -329,18 +353,15 @@ export const askStudyTutor = async (question: string, contextNotes: string): Pro
   const ai = getAIClient();
   
   const prompt = `
-    KONTEKS MATERI BELAJAR:
-    ${contextNotes.substring(0, 20000)}
+    PERAN: Tutor Privat Akademik (Level S2/S3).
+    MATERI:
+    ${contextNotes.substring(0, 25000)}
     
-    PERTANYAAN PENGGUNA:
-    "${question}"
+    PERTANYAAN SISWA: "${question}"
     
     TUGAS:
-    Jawab pertanyaan pengguna berdasarkan konteks materi di atas.
-    - Jika pengguna meminta penjelasan lebih lanjut, berikan analogi.
-    - Jika pengguna kritis/ahli, berikan jawaban mendalam.
-    - Bersikaplah sebagai tutor privat yang suportif.
-    - Gunakan Bahasa Indonesia.
+    Jawab dengan mendalam, gunakan analogi cerdas, dan kaitkan kembali ke konsep inti dalam materi.
+    Jangan berikan jawaban satu kalimat. Jelaskan "Mengapa" dan "Bagaimana".
   `;
 
   try {
