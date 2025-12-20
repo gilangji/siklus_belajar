@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,13 +10,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
-              // Deep background colors
-              void: '#030508', 
-              surface: '#0B0F17',
-              surfaceLight: '#141A25',
+              // Dynamic Colors via CSS Variables
+              void: 'var(--color-void)',
+              surface: 'var(--color-surface)',
+              surfaceLight: 'var(--color-surface-light)',
               
               // Accents (Blurple/Indigo)
               primary: '#5c65e6',
@@ -25,20 +26,19 @@
               
               // Text
               txt: {
-                main: '#f8fafc',
-                muted: '#94a3b8',
-                dim: '#475569'
+                main: 'var(--color-txt-main)',
+                muted: 'var(--color-txt-muted)',
+                dim: 'var(--color-txt-dim)'
               },
               
               // Borders
-              line: 'rgba(255, 255, 255, 0.08)'
+              line: 'var(--color-line)'
             },
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
             },
             backgroundImage: {
               'hero-glow': 'radial-gradient(circle at 50% -10%, rgba(92, 101, 230, 0.15) 0%, rgba(0, 0, 0, 0) 50%)',
-              'card-gradient': 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
             }
           }
         }
@@ -46,18 +46,51 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+      :root {
+        /* LIGHT MODE (Day) */
+        --color-void: #f1f5f9;      /* Slate 100 */
+        --color-surface: #ffffff;   /* White */
+        --color-surface-light: #e2e8f0; /* Slate 200 */
+        
+        --color-txt-main: #0f172a;  /* Slate 900 */
+        --color-txt-muted: #475569; /* Slate 600 */
+        --color-txt-dim: #94a3b8;   /* Slate 400 */
+        
+        --color-line: rgba(0, 0, 0, 0.08);
+        
+        --bg-grid-color: rgba(0, 0, 0, 0.04);
+        --bg-radial-start: rgba(59, 130, 246, 0.1); /* Blue tint */
+      }
+
+      .dark {
+        /* DARK MODE (Night) */
+        --color-void: #030508;
+        --color-surface: #0B0F17;
+        --color-surface-light: #141A25;
+        
+        --color-txt-main: #f8fafc;
+        --color-txt-muted: #94a3b8;
+        --color-txt-dim: #475569;
+        
+        --color-line: rgba(255, 255, 255, 0.08);
+        
+        --bg-grid-color: rgba(255, 255, 255, 0.03);
+        --bg-radial-start: rgba(92, 101, 230, 0.15); /* Indigo tint */
+      }
+      
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #030508;
-        color: #f8fafc;
+        background-color: var(--color-void);
+        color: var(--color-txt-main);
         /* Technical Grid Background + Glow */
         background-image: 
-          radial-gradient(circle at 50% 0%, #1e1b4b 0%, transparent 60%),
-          linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), 
-          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+          radial-gradient(circle at 50% 0%, var(--bg-radial-start) 0%, transparent 60%),
+          linear-gradient(var(--bg-grid-color) 1px, transparent 1px), 
+          linear-gradient(90deg, var(--bg-grid-color) 1px, transparent 1px);
         background-size: 100% 100%, 40px 40px, 40px 40px; /* 40px grid size */
         background-attachment: fixed;
         min-height: 100vh;
+        transition: background-color 0.5s ease, color 0.5s ease;
       }
       
       /* Glassmorphism Utilities */
@@ -65,23 +98,31 @@
         background: rgba(11, 15, 23, 0.6);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--color-line);
       }
       
       .glass-card {
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        background: var(--color-surface);
+        /* In dark mode, we want transparency. In light mode, solid white often looks cleaner or slight trans. 
+           We use a CSS variable for background opacity or just override in .dark */
+        background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface) 100%);
+        border: 1px solid var(--color-line);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         backdrop-filter: blur(8px);
-        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.3s ease, border-color 0.3s ease;
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+      
+      .dark .glass-card {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
       }
 
-      /* REQUESTED STYLE: Hover Zoom for Light Cards */
-      .bg-white.rounded-xl.shadow-sm.border.border-gray-100 {
+      /* Hover Zoom for Cards */
+      .hover-scale {
         transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         will-change: transform;
       }
-      .bg-white.rounded-xl.shadow-sm.border.border-gray-100:hover {
+      .hover-scale:hover {
         transform: scale(1.03);
       }
 
@@ -104,12 +145,13 @@
         background: transparent; 
       }
       ::-webkit-scrollbar-thumb {
-        background: #334155; 
+        background: var(--color-txt-dim); 
         border-radius: 10px;
-        border: 2px solid #030508; /* Padding effect */
+        border: 2px solid var(--color-void); 
+        opacity: 0.5;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #475569; 
+        background: var(--color-txt-muted); 
       }
       
       /* 3D Flip Effects */

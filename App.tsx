@@ -15,6 +15,9 @@ const App: React.FC = () => {
   const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Theme State (Default to Dark)
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
@@ -24,12 +27,10 @@ const App: React.FC = () => {
   const [sessionTopicIntent, setSessionTopicIntent] = useState<string>('');
   
   // Gamification State
-  // Default Items: Rug and Desk are starter items
   const [unlockedItems, setUnlockedItems] = useState<string[]>(['rug', 'desk']);
-  // Store dynamically generated items here
   const [generatedItems, setGeneratedItems] = useState<RoomItem[]>([]);
 
-  // Active Session State for Global Timer
+  // Active Session State
   const [activeSessionState, setActiveSessionState] = useState<{
     isActive: boolean;
     topic: string;
@@ -37,36 +38,37 @@ const App: React.FC = () => {
     isBreak: boolean;
   } | null>(null);
 
-  // 1. Check Auth Session
+  // Theme Toggle Effect
+  useEffect(() => {
+    const html = document.documentElement;
+    if (isDarkMode) {
+      html.classList.add('dark');
+    } else {
+      html.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  // Auth & Data Fetching
   useEffect(() => {
     const checkSession = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
-        if (error) {
-           console.warn("Session check error:", error.message);
-        } else {
-           setSession(data.session);
-        }
+        if (error) console.warn("Session check error:", error.message);
+        else setSession(data.session);
       } catch (err) {
-        console.warn("Failed to check session (likely missing Supabase config):", err);
+        console.warn("Failed to check session:", err);
       } finally {
         setLoading(false);
       }
     };
-
     checkSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) setIsGuest(false);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
-  // 2. Fetch Data from Supabase when Logged In
   useEffect(() => {
     if (session?.user && !isGuest) {
       fetchUserData();
@@ -75,27 +77,12 @@ const App: React.FC = () => {
 
   const fetchUserData = async () => {
     if (!session?.user) return;
-
     try {
-      const { data: modulesData, error: modulesError } = await supabase
-        .from('modules')
-        .select('*')
-        .order('week', { ascending: true });
-      
+      const { data: modulesData } = await supabase.from('modules').select('*').order('week', { ascending: true });
       if (modulesData) setModules(modulesData);
-      if (modulesError) console.error('Error fetching modules:', modulesError);
 
-      const { data: sessionsData, error: sessionsError } = await supabase
-        .from('sessions')
-        .select('*')
-        .order('date', { ascending: true });
-
+      const { data: sessionsData } = await supabase.from('sessions').select('*').order('date', { ascending: true });
       if (sessionsData) setSessions(sessionsData);
-      if (sessionsError) console.error('Error fetching sessions:', sessionsError);
-
-      // In a real app, fetch 'unlockedItems' from a 'profiles' table here.
-      // For this demo, we keep local state for items, persisting in memory only.
-
     } catch (error) {
       console.error("Connection error:", error);
     }
@@ -126,7 +113,7 @@ const App: React.FC = () => {
     setSessions([]);
     setCurrentView(AppView.DASHBOARD);
     setActiveSessionState(null);
-    setUnlockedItems(['rug', 'desk']); // Reset gamification
+    setUnlockedItems(['rug', 'desk']);
     setGeneratedItems([]);
     setLoading(false);
   };
@@ -134,68 +121,40 @@ const App: React.FC = () => {
   const handleSaveSession = async (newSession: StudySession) => {
     setSessions(prev => {
       const exists = prev.find(s => s.id === newSession.id);
-      if (exists) {
-        return prev.map(s => s.id === newSession.id ? newSession : s);
-      }
+      if (exists) return prev.map(s => s.id === newSession.id ? newSession : s);
       return [...prev, newSession];
     });
-
     if (session?.user && !isGuest) {
       try {
-        const { error } = await supabase.from('sessions').upsert({
-          ...newSession,
-          user_id: session.user.id
-        });
-        if (error) console.error("Failed to save session to DB:", error.message);
+        await supabase.from('sessions').upsert({ ...newSession, user_id: session.user.id });
       } catch (err) {
          console.error("Exception saving session:", err);
       }
     }
   };
 
-  // --- GAMIFICATION LOGIC: INFINITE DROPS ---
   const handleUnlockReward = () => {
-    // 1. Combine Base + Generated
     const allKnownItems = [...BASE_ROOM_ITEMS, ...generatedItems];
-    
-    // 2. Filter items NOT yet unlocked
     const lockedItems = allKnownItems.filter(item => !unlockedItems.includes(item.id));
-    
-    // 3. LOGIC: If we still have locked items, pick one.
-    //    If ALL are unlocked, GENERATE A NEW ONE.
-    
     let reward: RoomItem;
 
     if (lockedItems.length > 0) {
-       // Pick from existing locked
        const randomIndex = Math.floor(Math.random() * lockedItems.length);
        reward = lockedItems[randomIndex];
     } else {
-       // Generate new Infinite Item
        reward = generateRandomItem();
-       // Save to known list
        setGeneratedItems(prev => [...prev, reward]);
     }
-
-    // 4. Update Unlocked State
     setUnlockedItems(prev => [...prev, reward.id]);
-
-    // 5. Return item info for UI display
     return { id: reward.id, name: reward.name };
   };
 
   const handleUpdateModules = async (updatedModules: StudyModule[], shouldReplace: boolean = false) => {
     setModules(updatedModules);
-
     if (session?.user && !isGuest) {
       if (shouldReplace) {
-         try {
-           await supabase.from('modules').delete().eq('user_id', session.user.id);
-         } catch (e) {
-           console.error("Error clearing old plan:", e);
-         }
+         try { await supabase.from('modules').delete().eq('user_id', session.user.id); } catch (e) {}
       }
-
       const payload = updatedModules.map(m => ({
         id: m.id,
         user_id: session.user.id,
@@ -205,9 +164,7 @@ const App: React.FC = () => {
         topics: m.topics,
         completed: m.completed
       }));
-
-      const { error } = await supabase.from('modules').upsert(payload);
-      if (error) console.error("Failed to sync modules:", error);
+      await supabase.from('modules').upsert(payload);
     }
   };
 
@@ -230,7 +187,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden text-txt-main">
+    <div className="flex h-screen overflow-hidden text-txt-main bg-void transition-colors duration-500">
       <Sidebar 
         currentView={currentView} 
         onChangeView={setCurrentView} 
@@ -240,6 +197,8 @@ const App: React.FC = () => {
         isGuest={isGuest}
         onLogout={handleLogout}
         userSessions={sessions}
+        isDarkMode={isDarkMode}
+        toggleTheme={() => setIsDarkMode(!isDarkMode)}
       />
 
       <div className="flex-1 flex flex-col h-full overflow-hidden relative z-10">
@@ -281,6 +240,7 @@ const App: React.FC = () => {
               <CharacterRoom 
                 unlockedItems={unlockedItems} 
                 customItems={generatedItems} 
+                isDarkMode={isDarkMode}
               />
             )}
             
@@ -313,8 +273,8 @@ const App: React.FC = () => {
                  <p className="text-[10px] uppercase font-bold tracking-wider text-txt-dim mb-0.5">
                    {activeSessionState.topic.includes('Paused') ? 'Jeda' : activeSessionState.isBreak ? 'Sedang Istirahat' : 'Sesi Aktif'}
                  </p>
-                 <p className="text-sm font-bold text-white truncate">{activeSessionState.topic.replace(' (Paused)', '')}</p>
-                 <p className="text-xl font-mono font-bold text-white mt-1">
+                 <p className="text-sm font-bold text-txt-main truncate">{activeSessionState.topic.replace(' (Paused)', '')}</p>
+                 <p className="text-xl font-mono font-bold text-txt-main mt-1">
                    {formatTime(activeSessionState.elapsedSeconds)}
                  </p>
               </div>
