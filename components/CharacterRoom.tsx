@@ -1,187 +1,213 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { StudySession } from '../types';
-import { Trophy, Clock, Lock, Sparkles, User, Monitor, Coffee, Book, Lamp, Box, Armchair, Laptop } from 'lucide-react';
+import { Trophy, Lock, Sparkles, User, Monitor, Coffee, Book, Lamp, Box, Armchair, Laptop, Cat, Dog, Sword, Gamepad2, Palette, Music, Umbrella, Gift, Ghost, Flower2, Search } from 'lucide-react';
 
 interface CharacterRoomProps {
-  sessions: StudySession[];
+  unlockedItems: string[]; // Receive IDs directly
 }
 
-const CharacterRoom: React.FC<CharacterRoomProps> = ({ sessions }) => {
-  // 1. Calculate Total XP (Study Time + Break Time)
-  const totalMinutes = sessions.reduce((acc, s) => {
-    return acc + (s.durationMinutes || 0) + (s.breakMinutes || 0);
-  }, 0);
+// Define the Master List of All Items
+export const ROOM_ITEMS = [
+  // Basics
+  { id: 'rug', name: 'Karpet Persia', icon: Box, position: 'bottom-[15%] left-1/2 -translate-x-1/2 scale-150 opacity-80', color: 'text-red-800' },
+  { id: 'desk', name: 'Meja Oak', icon: Box, position: 'bottom-[25%] left-1/2 -translate-x-1/2 scale-[2]', color: 'text-amber-900' },
+  { id: 'chair', name: 'Kursi Gaming', icon: Armchair, position: 'bottom-[22%] left-1/2 -translate-x-1/2 z-20', color: 'text-blue-500' },
+  
+  // Electronics
+  { id: 'laptop', name: 'MacBook Pro', icon: Laptop, position: 'bottom-[32%] left-1/2 -translate-x-1/2 z-30 scale-75', color: 'text-gray-300' },
+  { id: 'pc', name: 'PC Master Race', icon: Monitor, position: 'bottom-[35%] ml-16 left-1/2 z-20', color: 'text-purple-400' },
+  { id: 'console', name: 'Retro Console', icon: Gamepad2, position: 'bottom-[15%] right-[20%] z-10', color: 'text-indigo-400' },
+  
+  // Decor
+  { id: 'lamp', name: 'Lampu Pixar', icon: Lamp, position: 'bottom-[35%] -ml-20 left-1/2 z-10', color: 'text-yellow-200' },
+  { id: 'books', name: 'Tumpukan Buku', icon: Book, position: 'bottom-[12%] left-[10%] z-10', color: 'text-emerald-700' },
+  { id: 'plant', name: 'Monstera', icon: Flower2, position: 'bottom-[15%] left-[5%] z-20 scale-125', color: 'text-green-500' },
+  { id: 'painting', name: 'Lukisan Abstrak', icon: Palette, position: 'top-[20%] left-[20%] opacity-80', color: 'text-pink-400' },
+  { id: 'poster', name: 'Poster Band', icon: Music, position: 'top-[25%] right-[30%] opacity-70 rotate-6', color: 'text-cyan-400' },
+  
+  // Unique / Fun
+  { id: 'cat', name: 'Kucing Oren', icon: Cat, position: 'bottom-[28%] right-[15%] animate-bounce', color: 'text-orange-400' },
+  { id: 'dog', name: 'Anjing Shiba', icon: Dog, position: 'bottom-[10%] left-[25%]', color: 'text-amber-200' },
+  { id: 'sword', name: 'Pedang Legendaris', icon: Sword, position: 'top-[15%] left-1/2 -translate-x-1/2 rotate-45', color: 'text-slate-300' },
+  { id: 'trophy', name: 'Piala LPDP', icon: Trophy, position: 'top-[38%] right-[10%] z-10', color: 'text-yellow-400' },
+  { id: 'umbrella', name: 'Payung Hias', icon: Umbrella, position: 'bottom-[40%] right-[5%] -rotate-12', color: 'text-rose-400' },
+  { id: 'ghost', name: 'Teman Hantu', icon: Ghost, position: 'top-[10%] left-[10%] opacity-50 animate-pulse', color: 'text-white' },
+];
 
-  // 2. Define Unlockable Items
-  const items = [
-    { id: 'rug', name: 'Karpet Nyaman', cost: 15, icon: Box, position: 'bottom-20 left-1/2 -translate-x-1/2' },
-    { id: 'desk', name: 'Meja Belajar', cost: 45, icon: Box, position: 'bottom-32 left-1/2 -translate-x-1/2 scale-150' }, // Placeholder visual logic
-    { id: 'chair', name: 'Kursi Ergonomis', cost: 90, icon: Armchair, position: 'bottom-28 left-1/2 -translate-x-1/2 z-20' },
-    { id: 'lamp', name: 'Lampu Belajar', cost: 150, icon: Lamp, position: 'bottom-48 ml-20 left-1/2' },
-    { id: 'laptop', name: 'Laptop Kerja', cost: 240, icon: Laptop, position: 'bottom-44 left-1/2 -translate-x-1/2 z-10' },
-    { id: 'books', name: 'Koleksi Buku', cost: 360, icon: Book, position: 'bottom-48 -ml-24 left-1/2' },
-    { id: 'plant', name: 'Tanaman Hias', cost: 500, icon: Coffee, position: 'bottom-20 left-10' },
-    { id: 'pc', name: 'PC Gaming RGB', cost: 720, icon: Monitor, position: 'bottom-44 ml-12 left-1/2 z-10 text-purple-400' },
-    { id: 'trophy', name: 'Piala Master', cost: 1000, icon: Trophy, position: 'top-20 right-20 text-yellow-400' },
-  ];
+const CharacterRoom: React.FC<CharacterRoomProps> = ({ unlockedItems }) => {
+  // Character State
+  const [charPos, setCharPos] = useState({ x: 50, y: 80 }); // Percentages
+  const [targetPos, setTargetPos] = useState<{x: number, y: number} | null>(null);
+  const [isMoving, setIsMoving] = useState(false);
+  const [facing, setFacing] = useState<'left' | 'right'>('right');
+  
+  const roomRef = useRef<HTMLDivElement>(null);
 
-  // 3. Determine Level and Room State
-  const level = Math.floor(totalMinutes / 60) + 1;
-  const isHouseUnlocked = totalMinutes >= 2000; // Expansion logic
+  // Movement Logic
+  const handleRoomClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!roomRef.current) return;
+
+    const rect = roomRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Convert to percentage
+    const xPercent = (x / rect.width) * 100;
+    const yPercent = (y / rect.height) * 100;
+
+    // Constrain to "Floor" area (approx bottom 50% to bottom 5% visually)
+    // Visual tweak: Floor starts around 50% from top.
+    if (yPercent < 40) {
+        // Clicked on wall/ceiling, ignore or play "cant go there" animation
+        return;
+    }
+
+    // Determine direction
+    if (xPercent > charPos.x) setFacing('right');
+    else setFacing('left');
+
+    setTargetPos({ x: xPercent, y: yPercent });
+    setIsMoving(true);
+  };
+
+  // Animate Position
+  useEffect(() => {
+    if (targetPos) {
+      // Simple timeout to simulate walking duration (CSS transition handles smoothness)
+      setCharPos(targetPos);
+      const timeout = setTimeout(() => {
+        setIsMoving(false);
+        setTargetPos(null);
+      }, 1000); // Matches CSS transition duration
+      return () => clearTimeout(timeout);
+    }
+  }, [targetPos]);
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
-      <header>
-        <h2 className="text-4xl font-bold text-white tracking-tight mb-2 flex items-center gap-3">
-          <HomeIcon className="text-primary" size={32} />
-          Ruang Saya
-        </h2>
-        <p className="text-txt-muted text-lg">
-          Belajar lebih banyak untuk mendekorasi ruangan ini. Total Waktu: <span className="text-white font-bold">{totalMinutes} Menit</span> (Level {level})
-        </p>
+      <header className="flex justify-between items-end">
+        <div>
+          <h2 className="text-4xl font-bold text-white tracking-tight mb-2 flex items-center gap-3">
+            <User className="text-primary" size={32} />
+            Ruang Saya
+          </h2>
+          <p className="text-txt-muted text-lg">
+            Klik di lantai untuk berjalan. Koleksi item: <span className="text-white font-bold">{unlockedItems.length} / {ROOM_ITEMS.length}</span>
+          </p>
+        </div>
+        
+        {/* Helper Hint */}
+        <div className="bg-primary/10 border border-primary/30 px-4 py-2 rounded-lg text-sm text-primary flex items-center gap-2 animate-pulse">
+           <Search size={16} />
+           <span>Selesaikan sesi belajar untuk dapat Item Random!</span>
+        </div>
       </header>
 
       {/* --- THE ROOM VISUALIZER --- */}
-      <div className="relative w-full aspect-video max-h-[600px] bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] rounded-3xl border border-line shadow-2xl overflow-hidden group">
+      <div 
+        ref={roomRef}
+        onClick={handleRoomClick}
+        className="relative w-full aspect-video max-h-[600px] bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] rounded-3xl border border-line shadow-2xl overflow-hidden group cursor-crosshair select-none"
+      >
         
         {/* Room Background / Walls */}
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-[#1e293b] skew-x-12 origin-bottom-left opacity-50"></div> {/* Floor perspective fake */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(92,101,230,0.15),transparent_70%)]"></div>
+        <div className="absolute inset-x-0 bottom-0 h-[45%] bg-[#1e293b] skew-x-12 origin-bottom-left opacity-50 border-t border-white/5 pointer-events-none"></div> 
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(92,101,230,0.15),transparent_70%)] pointer-events-none"></div>
 
-        {/* Expansion: House Background (Overlay if unlocked) */}
-        {isHouseUnlocked && (
-           <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1518780664697-55e3ad937233?q=80&w=1000&auto=format&fit=crop)' }}></div>
-        )}
-
-        {/* CHARACTER */}
-        <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
-           {/* Simple CSS Character Representation */}
-           <div className="relative animate-bounce-slow">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-500 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(92,101,230,0.6)] border-2 border-white">
-                 <User size={32} className="text-white" />
-              </div>
-              {/* Name Tag */}
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap border border-white/10">
-                 Level {level}
-              </div>
-           </div>
-           {/* Shadow */}
-           <div className="w-12 h-2 bg-black/40 rounded-full blur-sm mt-2"></div>
-        </div>
-
-        {/* ITEMS (Rendered conditionally based on time) */}
-        {items.map((item) => {
-          const isUnlocked = totalMinutes >= item.cost;
+        {/* ITEMS RENDER */}
+        {ROOM_ITEMS.map((item) => {
+          const isUnlocked = unlockedItems.includes(item.id);
           if (!isUnlocked) return null;
 
           return (
             <div 
               key={item.id} 
-              className={`absolute ${item.position} transition-all duration-700 animate-fade-in`}
+              className={`absolute ${item.position} transition-all duration-700 animate-fade-in pointer-events-none`}
             >
-               {/* Using Lucide Icons to represent furniture for simplicity in this code-only environment */}
                {item.id === 'desk' ? (
                  <div className="w-48 h-24 bg-[#334155] rounded-lg border-t-4 border-[#475569] shadow-xl flex items-end justify-center relative">
                     <div className="w-4 h-full bg-[#1e293b] absolute left-4 bottom-0"></div>
                     <div className="w-4 h-full bg-[#1e293b] absolute right-4 bottom-0"></div>
                  </div>
                ) : item.id === 'rug' ? (
-                 <div className="w-64 h-32 bg-primary/20 rounded-[100%] blur-sm transform scale-y-50"></div>
+                 <div className="w-64 h-32 bg-red-900/40 rounded-[100%] blur-sm transform scale-y-50 border-4 border-red-900/50"></div>
                ) : (
-                 <item.icon size={item.id === 'pc' ? 48 : 40} className={`drop-shadow-lg ${item.icon === Monitor ? 'text-purple-400' : 'text-slate-300'}`} />
+                 <item.icon size={48} className={`drop-shadow-2xl filter ${item.color}`} strokeWidth={1.5} />
                )}
             </div>
           );
         })}
 
-        {/* Locked Message Overlay (Subtle) */}
-        <div className="absolute top-4 right-4 bg-black/40 backdrop-blur px-4 py-2 rounded-lg border border-white/10 text-xs text-txt-dim">
-           Item berikutnya: <span className="text-primary font-bold">{items.find(i => totalMinutes < i.cost)?.name || "Ekspansi Rumah"}</span> ({items.find(i => totalMinutes < i.cost)?.cost || 2000} m)
+        {/* PLAYABLE CHARACTER */}
+        <div 
+           className="absolute z-50 flex flex-col items-center pointer-events-none transition-all duration-1000 ease-in-out"
+           style={{ 
+             left: `${charPos.x}%`, 
+             top: `${charPos.y}%`,
+             transform: 'translate(-50%, -100%)' // Pivot at feet
+           }}
+        >
+           <div className={`relative transition-transform duration-300 ${isMoving ? 'animate-bounce' : ''}`}>
+              {/* Body */}
+              <div className={`w-16 h-16 bg-gradient-to-br from-primary to-blue-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(92,101,230,0.8)] border-4 border-white transform ${facing === 'left' ? 'scale-x-[-1]' : 'scale-x-1'}`}>
+                 <div className="flex gap-2 mt-1">
+                    <div className="w-2 h-2 bg-white rounded-full animate-blink"></div>
+                    <div className="w-2 h-2 bg-white rounded-full animate-blink delay-100"></div>
+                 </div>
+              </div>
+              {/* Name Tag */}
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap border border-white/10">
+                 Saya
+              </div>
+           </div>
+           {/* Shadow */}
+           <div className="w-12 h-3 bg-black/60 rounded-full blur-sm mt-1"></div>
         </div>
+
+        {/* Click Indicator */}
+        {targetPos && (
+           <div 
+             className="absolute w-8 h-8 border-2 border-white/50 rounded-full animate-ping pointer-events-none"
+             style={{ left: `${targetPos.x}%`, top: `${targetPos.y}%`, transform: 'translate(-50%, -50%)' }}
+           ></div>
+        )}
 
       </div>
 
-      {/* --- UNLOCKS LIST --- */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.map((item) => {
-          const isUnlocked = totalMinutes >= item.cost;
-          const progress = Math.min(100, (totalMinutes / item.cost) * 100);
+      {/* --- INVENTORY LIST --- */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        {ROOM_ITEMS.map((item) => {
+          const isUnlocked = unlockedItems.includes(item.id);
 
           return (
             <div 
               key={item.id} 
-              className={`p-4 rounded-xl border flex items-center gap-4 transition-all ${
+              className={`p-3 rounded-xl border flex flex-col items-center gap-2 text-center transition-all ${
                 isUnlocked 
-                  ? 'bg-primary/10 border-primary/30' 
-                  : 'bg-surfaceLight/30 border-line grayscale opacity-70'
+                  ? 'bg-surfaceLight/50 border-primary/30' 
+                  : 'bg-surfaceLight/10 border-line opacity-40 grayscale'
               }`}
             >
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                isUnlocked ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-surfaceLight text-txt-dim'
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                isUnlocked ? 'bg-surfaceLight text-white shadow-sm' : 'bg-transparent text-txt-dim'
               }`}>
-                {isUnlocked ? <item.icon size={24} /> : <Lock size={20} />}
+                {isUnlocked ? <item.icon size={20} className={item.color} /> : <Lock size={16} />}
               </div>
               
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center mb-1">
-                  <h4 className={`font-bold truncate ${isUnlocked ? 'text-white' : 'text-txt-muted'}`}>{item.name}</h4>
-                  {isUnlocked && <Sparkles size={12} className="text-yellow-400" />}
-                </div>
-                
-                {isUnlocked ? (
-                  <p className="text-xs text-green-400 font-medium">Terbuka!</p>
-                ) : (
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] text-txt-dim">
-                       <span>{Math.round(progress)}%</span>
-                       <span>{item.cost} min</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-surfaceLight rounded-full overflow-hidden">
-                       <div className="h-full bg-txt-dim rounded-full" style={{ width: `${progress}%` }}></div>
-                    </div>
-                  </div>
-                )}
+              <div className="min-w-0 w-full">
+                 <h4 className="text-xs font-bold truncate text-txt-main">{item.name}</h4>
+                 {isUnlocked ? (
+                    <span className="text-[10px] text-green-400">Milik Anda</span>
+                 ) : (
+                    <span className="text-[10px] text-txt-dim">Terkunci</span>
+                 )}
               </div>
             </div>
           );
         })}
-        
-        {/* House Expansion Card */}
-        <div className={`p-4 rounded-xl border flex items-center gap-4 transition-all ${
-            isHouseUnlocked ? 'bg-purple-500/10 border-purple-500/30' : 'bg-surfaceLight/30 border-line grayscale opacity-70'
-          }`}>
-             <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                isHouseUnlocked ? 'bg-purple-500 text-white shadow-lg' : 'bg-surfaceLight text-txt-dim'
-              }`}>
-                <HomeIcon size={24} />
-             </div>
-             <div className="flex-1">
-                <h4 className="font-bold text-white">Ekspansi Rumah</h4>
-                <p className="text-xs text-txt-muted">{isHouseUnlocked ? "Rumah Mewah Terbuka!" : "Butuh 2000 menit"}</p>
-             </div>
-        </div>
       </div>
     </div>
   );
 };
-
-// Helper Icon for this component
-const HomeIcon = ({ size, className }: { size?: number, className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width={size || 24} 
-    height={size || 24} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-  </svg>
-);
 
 export default CharacterRoom;

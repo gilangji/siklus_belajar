@@ -4,7 +4,7 @@ import Dashboard from './components/Dashboard';
 import Planner from './components/Planner';
 import StudySessionView from './components/StudySessionView';
 import ReviewCenter from './components/ReviewCenter';
-import CharacterRoom from './components/CharacterRoom'; // Import New Component
+import CharacterRoom, { ROOM_ITEMS } from './components/CharacterRoom'; 
 import Auth from './components/Auth';
 import { AppView, StudyModule, StudySession, UserProgress } from './types';
 import { Menu, Loader2, Timer, Maximize2 } from 'lucide-react';
@@ -22,6 +22,10 @@ const App: React.FC = () => {
   const [modules, setModules] = useState<StudyModule[]>([]);
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [sessionTopicIntent, setSessionTopicIntent] = useState<string>('');
+  
+  // Gamification State
+  // Default Items: Rug and Desk are starter items
+  const [unlockedItems, setUnlockedItems] = useState<string[]>(['rug', 'desk']);
 
   // Active Session State for Global Timer
   const [activeSessionState, setActiveSessionState] = useState<{
@@ -87,6 +91,9 @@ const App: React.FC = () => {
       if (sessionsData) setSessions(sessionsData);
       if (sessionsError) console.error('Error fetching sessions:', sessionsError);
 
+      // In a real app, fetch 'unlockedItems' from a 'profiles' table here.
+      // For this demo, we keep local state for items, persisting in memory only.
+
     } catch (error) {
       console.error("Connection error:", error);
     }
@@ -97,10 +104,10 @@ const App: React.FC = () => {
     topicsLearned: new Set(sessions.map(s => s.topic)).size,
     averageQuizScore: sessions.length > 0 
       ? sessions.reduce((acc, s) => acc + (s.quizScore || 0), 0) / sessions.length 
-      : 0
+      : 0,
+    unlockedItems: unlockedItems
   };
 
-  // Create a Set of completed topics (lowercase for case-insensitive check)
   const completedTopics = new Set(sessions.map(s => s.topic.trim().toLowerCase()));
 
   const handleStartStudy = (topic: string) => {
@@ -117,12 +124,12 @@ const App: React.FC = () => {
     setSessions([]);
     setCurrentView(AppView.DASHBOARD);
     setActiveSessionState(null);
+    setUnlockedItems(['rug', 'desk']); // Reset gamification
     setLoading(false);
   };
 
   const handleSaveSession = async (newSession: StudySession) => {
     setSessions(prev => {
-      // Check if session exists to update it, otherwise add new
       const exists = prev.find(s => s.id === newSession.id);
       if (exists) {
         return prev.map(s => s.id === newSession.id ? newSession : s);
@@ -141,6 +148,25 @@ const App: React.FC = () => {
          console.error("Exception saving session:", err);
       }
     }
+  };
+
+  // --- GAMIFICATION LOGIC: RANDOM DROP ---
+  const handleUnlockReward = () => {
+    // 1. Filter items not yet unlocked
+    const lockedItems = ROOM_ITEMS.filter(item => !unlockedItems.includes(item.id));
+    
+    // 2. If all unlocked, return null
+    if (lockedItems.length === 0) return null;
+
+    // 3. Pick random
+    const randomIndex = Math.floor(Math.random() * lockedItems.length);
+    const reward = lockedItems[randomIndex];
+
+    // 4. Update State
+    setUnlockedItems(prev => [...prev, reward.id]);
+
+    // 5. Return item info for UI display
+    return { id: reward.id, name: reward.name };
   };
 
   const handleUpdateModules = async (updatedModules: StudyModule[], shouldReplace: boolean = false) => {
@@ -237,7 +263,7 @@ const App: React.FC = () => {
             )}
 
             {currentView === AppView.CHARACTER && (
-              <CharacterRoom sessions={sessions} />
+              <CharacterRoom unlockedItems={unlockedItems} />
             )}
             
             <div style={{ display: currentView === AppView.STUDY_SESSION ? 'block' : 'none' }}>
@@ -245,6 +271,7 @@ const App: React.FC = () => {
                 initialTopic={sessionTopicIntent} 
                 onSaveSession={handleSaveSession}
                 onSessionUpdate={(state) => setActiveSessionState(state)}
+                onUnlockReward={handleUnlockReward}
               />
             </div>
 

@@ -46,6 +46,7 @@ export interface UserProgress {
   totalSessions: number;
   topicsLearned: number;
   averageQuizScore: number;
+  unlockedItems: string[]; // List of item IDs unlocked
 }
 
 // Gemini Response Schemas
