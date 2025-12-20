@@ -5,7 +5,7 @@ import { CheckCircle2, Circle, Loader2, Sparkles, AlertCircle, Settings2, X, Gra
 
 interface PlannerProps {
   modules: StudyModule[];
-  setModules: (modules: StudyModule[]) => void;
+  setModules: (modules: StudyModule[], shouldReplace?: boolean) => void;
   onStartStudy: (topic: string) => void;
   completedTopics?: Set<string>; // New prop
 }
@@ -36,7 +36,8 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy, co
         : { topic: "Belajar Efektif & Berpikir Kritis", duration: "Fleksibel", intensity: "Seimbang" };
         
       const newModules = await generateSyllabus(config);
-      setModules(newModules);
+      // IMPORTANT: Pass 'true' as second argument to indicate this is a REPLACEMENT plan
+      setModules(newModules, true);
     } catch (err) {
       setError("Gagal membuat rencana. Periksa koneksi atau API key Anda.");
     } finally {
@@ -46,7 +47,8 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy, co
 
   const toggleModuleCompletion = (id: string) => {
     const updated = modules.map(m => m.id === id ? { ...m, completed: !m.completed } : m);
-    setModules(updated);
+    // Pass 'false' because we are just updating status, not replacing the whole plan
+    setModules(updated, false);
   };
 
   return (

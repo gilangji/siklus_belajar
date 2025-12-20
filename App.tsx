@@ -142,10 +142,21 @@ const App: React.FC = () => {
     }
   };
 
-  const handleUpdateModules = async (updatedModules: StudyModule[]) => {
+  // UPDATED: Added `shouldReplace` param to handle wiping old plans
+  const handleUpdateModules = async (updatedModules: StudyModule[], shouldReplace: boolean = false) => {
     setModules(updatedModules);
 
     if (session?.user && !isGuest) {
+      // 1. If replacing the plan (New Plan), delete ALL existing modules first
+      if (shouldReplace) {
+         try {
+           await supabase.from('modules').delete().eq('user_id', session.user.id);
+         } catch (e) {
+           console.error("Error clearing old plan:", e);
+         }
+      }
+
+      // 2. Insert/Update new modules
       const payload = updatedModules.map(m => ({
         id: m.id,
         user_id: session.user.id,
