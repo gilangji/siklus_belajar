@@ -161,14 +161,8 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
         }
       }, 1000);
     } else {
-      if (onSessionUpdate && (step === 'LEARNING' || step === 'QUIZ')) {
-        onSessionUpdate({
-           isActive: true,
-           topic: topic + (isPaused ? " (Paused)" : ""),
-           elapsedSeconds: step === 'QUIZ' ? elapsedSeconds : (isBreak ? breakSessionSeconds : sessionSeconds),
-           isBreak: isBreak && step !== 'QUIZ'
-        });
-      } else if (step === 'SETUP' || step === 'RESULT') {
+      // Cleanup update
+      if (onSessionUpdate && (step === 'SETUP' || step === 'RESULT')) {
         onSessionUpdate(null);
       }
     }
@@ -296,14 +290,18 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
     try {
       setIsBreak(false);
       setIsPaused(false);
-      // Stop Audio
+      // Stop Audio immediately
       setCurrentAmbience('NONE');
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       
       const durationMins = Math.max(1, Math.ceil(elapsedSeconds / 60));
       const breakMins = Math.ceil(breakSeconds / 60);
 
       const interimSession: StudySession = {
-        id: currentSessionId || Date.now().toString(), // Fallback if ID invalid
+        id: currentSessionId || Date.now().toString(),
         date: new Date().toISOString().split('T')[0],
         topic: topic || "Sesi Tanpa Judul",
         referenceLink: link,
@@ -315,10 +313,10 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
         quizScore: undefined
       };
       
-      // Save progress to App state (and DB/LocalStorage)
       onSaveSession(interimSession);
 
-      // Transition Logic: Only go to quiz if valid questions exist
+      // CRITICAL FIX: Only go to QUIZ if there is data. Otherwise go directly to RESULT.
+      // We do NOT rely on returning null in render to fix this.
       if (generatedQuiz && generatedQuiz.length > 0) {
         setStep('QUIZ');
       } else {
@@ -377,8 +375,12 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
       
       onSaveSession(session);
       
+      // Ensure timer widget is removed immediately
+      if (onSessionUpdate) {
+        onSessionUpdate(null);
+      }
+      
       // TRIGGER REWARD HERE
-      // Safety check for callback
       if (onUnlockReward) {
          const reward = onUnlockReward();
          setNewReward(reward);
@@ -387,7 +389,6 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
       setStep('RESULT');
     } catch (err) {
       console.error("Error in finishSession:", err);
-      // Force result screen so user isn't stuck
       setStep('RESULT');
     }
   };
@@ -695,10 +696,23 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
 
   // QUIZ (Updated for light mode text)
   if (step === 'QUIZ') {
-    // Safety check to prevent crash if quiz is empty
+    // CRITICAL: Render Fallback if quiz is missing instead of returning null (which causes black screen)
     if (!generatedQuiz || generatedQuiz.length === 0) {
-      setStep('RESULT');
-      return null;
+      return (
+        <div className="flex flex-col items-center justify-center h-[60vh] text-center animate-fade-in">
+           <div className="bg-surfaceLight p-8 rounded-full mb-6 animate-pulse">
+             <Loader2 size={48} className="text-primary animate-spin" />
+           </div>
+           <h3 className="text-2xl font-bold text-txt-main mb-2">Memuat Kuis...</h3>
+           <p className="text-txt-muted mb-8">Jika tidak muncul dalam beberapa detik, silakan lanjut.</p>
+           <button 
+             onClick={() => setStep('RESULT')}
+             className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primaryHover transition-colors"
+           >
+             Lihat Hasil Langsung
+           </button>
+        </div>
+      );
     }
 
     const question = generatedQuiz[currentQuestionIdx];

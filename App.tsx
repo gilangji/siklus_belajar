@@ -169,6 +169,9 @@ const App: React.FC = () => {
   };
 
   const handleSaveSession = async (newSession: StudySession) => {
+    // 0. IMPORTANT: Clear active session state first to remove floating timer
+    setActiveSessionState(null);
+
     // 1. Update Local State immediately
     setSessions(prev => {
       const exists = prev.find(s => s.id === newSession.id);
