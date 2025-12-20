@@ -4,9 +4,9 @@ import Dashboard from './components/Dashboard';
 import Planner from './components/Planner';
 import StudySessionView from './components/StudySessionView';
 import ReviewCenter from './components/ReviewCenter';
-import CharacterRoom, { ROOM_ITEMS } from './components/CharacterRoom'; 
+import CharacterRoom, { BASE_ROOM_ITEMS, generateRandomItem } from './components/CharacterRoom'; 
 import Auth from './components/Auth';
-import { AppView, StudyModule, StudySession, UserProgress } from './types';
+import { AppView, StudyModule, StudySession, UserProgress, RoomItem } from './types';
 import { Menu, Loader2, Timer, Maximize2 } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 
@@ -26,6 +26,8 @@ const App: React.FC = () => {
   // Gamification State
   // Default Items: Rug and Desk are starter items
   const [unlockedItems, setUnlockedItems] = useState<string[]>(['rug', 'desk']);
+  // Store dynamically generated items here
+  const [generatedItems, setGeneratedItems] = useState<RoomItem[]>([]);
 
   // Active Session State for Global Timer
   const [activeSessionState, setActiveSessionState] = useState<{
@@ -125,6 +127,7 @@ const App: React.FC = () => {
     setCurrentView(AppView.DASHBOARD);
     setActiveSessionState(null);
     setUnlockedItems(['rug', 'desk']); // Reset gamification
+    setGeneratedItems([]);
     setLoading(false);
   };
 
@@ -150,19 +153,31 @@ const App: React.FC = () => {
     }
   };
 
-  // --- GAMIFICATION LOGIC: RANDOM DROP ---
+  // --- GAMIFICATION LOGIC: INFINITE DROPS ---
   const handleUnlockReward = () => {
-    // 1. Filter items not yet unlocked
-    const lockedItems = ROOM_ITEMS.filter(item => !unlockedItems.includes(item.id));
+    // 1. Combine Base + Generated
+    const allKnownItems = [...BASE_ROOM_ITEMS, ...generatedItems];
     
-    // 2. If all unlocked, return null
-    if (lockedItems.length === 0) return null;
+    // 2. Filter items NOT yet unlocked
+    const lockedItems = allKnownItems.filter(item => !unlockedItems.includes(item.id));
+    
+    // 3. LOGIC: If we still have locked items, pick one.
+    //    If ALL are unlocked, GENERATE A NEW ONE.
+    
+    let reward: RoomItem;
 
-    // 3. Pick random
-    const randomIndex = Math.floor(Math.random() * lockedItems.length);
-    const reward = lockedItems[randomIndex];
+    if (lockedItems.length > 0) {
+       // Pick from existing locked
+       const randomIndex = Math.floor(Math.random() * lockedItems.length);
+       reward = lockedItems[randomIndex];
+    } else {
+       // Generate new Infinite Item
+       reward = generateRandomItem();
+       // Save to known list
+       setGeneratedItems(prev => [...prev, reward]);
+    }
 
-    // 4. Update State
+    // 4. Update Unlocked State
     setUnlockedItems(prev => [...prev, reward.id]);
 
     // 5. Return item info for UI display
@@ -263,7 +278,10 @@ const App: React.FC = () => {
             )}
 
             {currentView === AppView.CHARACTER && (
-              <CharacterRoom unlockedItems={unlockedItems} />
+              <CharacterRoom 
+                unlockedItems={unlockedItems} 
+                customItems={generatedItems} 
+              />
             )}
             
             <div style={{ display: currentView === AppView.STUDY_SESSION ? 'block' : 'none' }}>

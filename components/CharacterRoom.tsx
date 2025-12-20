@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StudySession } from '../types';
-import { Trophy, Lock, Sparkles, User, Monitor, Coffee, Book, Lamp, Box, Armchair, Laptop, Cat, Dog, Sword, Gamepad2, Palette, Music, Umbrella, Gift, Ghost, Flower2, Search } from 'lucide-react';
+import { RoomItem } from '../types';
+import { Trophy, Lock, Sparkles, User, Monitor, Coffee, Book, Lamp, Box, Armchair, Laptop, Cat, Dog, Sword, Gamepad2, Palette, Music, Umbrella, Gift, Ghost, Flower2, Search, Gem, Crown, Star, Zap, Anchor, Feather, Key, Compass } from 'lucide-react';
 
 interface CharacterRoomProps {
-  unlockedItems: string[]; // Receive IDs directly
+  unlockedItems: string[]; 
+  customItems?: RoomItem[]; // Items generated dynamically
 }
 
-// Define the Master List of All Items
-export const ROOM_ITEMS = [
+// --- CONSTANTS & GENERATORS ---
+
+// 1. Base Static Items
+export const BASE_ROOM_ITEMS: RoomItem[] = [
   // Basics
   { id: 'rug', name: 'Karpet Persia', icon: Box, position: 'bottom-[15%] left-1/2 -translate-x-1/2 scale-150 opacity-80', color: 'text-red-800' },
   { id: 'desk', name: 'Meja Oak', icon: Box, position: 'bottom-[25%] left-1/2 -translate-x-1/2 scale-[2]', color: 'text-amber-900' },
@@ -34,7 +37,42 @@ export const ROOM_ITEMS = [
   { id: 'ghost', name: 'Teman Hantu', icon: Ghost, position: 'top-[10%] left-[10%] opacity-50 animate-pulse', color: 'text-white' },
 ];
 
-const CharacterRoom: React.FC<CharacterRoomProps> = ({ unlockedItems }) => {
+// 2. Random Item Generator Logic
+export const generateRandomItem = (): RoomItem => {
+  const adjectives = ["Kuno", "Cyber", "Emas", "Mistik", "Neon", "Gelap", "Suci", "Raksasa", "Mini", "Terlupakan"];
+  const nouns = ["Relik", "Kristal", "Totem", "Mahkota", "Kompas", "Kunci", "Permata", "Bintang", "Jangkar", "Bulu"];
+  
+  const icons = [Gem, Crown, Star, Zap, Anchor, Feather, Key, Compass, Sparkles, Gift];
+  const colors = ["text-purple-400", "text-yellow-400", "text-cyan-400", "text-rose-400", "text-emerald-400", "text-blue-400", "text-orange-400"];
+
+  const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+  const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+  const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+  // Random position on the "floor" area
+  // Left: 5% to 90%
+  // Bottom: 5% to 40% (Visual floor area)
+  const left = 5 + Math.floor(Math.random() * 85);
+  const bottom = 5 + Math.floor(Math.random() * 35);
+  
+  const scale = 0.8 + Math.random() * 0.5; // Random size 0.8x to 1.3x
+  const rotate = Math.floor(Math.random() * 30) - 15; // -15 to 15 deg
+
+  return {
+    id: `generated-${Date.now()}-${Math.random()}`,
+    name: `${randomNoun} ${randomAdj}`,
+    icon: randomIcon,
+    color: randomColor,
+    position: `bottom-[${bottom}%] left-[${left}%] scale-[${scale.toFixed(1)}] rotate-[${rotate}deg] z-20`
+  };
+};
+
+
+const CharacterRoom: React.FC<CharacterRoomProps> = ({ unlockedItems, customItems = [] }) => {
+  // Combine Base items with any custom generated items passed from parent
+  const allDisplayItems = [...BASE_ROOM_ITEMS, ...customItems];
+
   // Character State
   const [charPos, setCharPos] = useState({ x: 50, y: 80 }); // Percentages
   const [targetPos, setTargetPos] = useState<{x: number, y: number} | null>(null);
@@ -55,14 +93,9 @@ const CharacterRoom: React.FC<CharacterRoomProps> = ({ unlockedItems }) => {
     const xPercent = (x / rect.width) * 100;
     const yPercent = (y / rect.height) * 100;
 
-    // Constrain to "Floor" area (approx bottom 50% to bottom 5% visually)
-    // Visual tweak: Floor starts around 50% from top.
-    if (yPercent < 40) {
-        // Clicked on wall/ceiling, ignore or play "cant go there" animation
-        return;
-    }
+    // Constrain to "Floor" area
+    if (yPercent < 40) return;
 
-    // Determine direction
     if (xPercent > charPos.x) setFacing('right');
     else setFacing('left');
 
@@ -73,12 +106,11 @@ const CharacterRoom: React.FC<CharacterRoomProps> = ({ unlockedItems }) => {
   // Animate Position
   useEffect(() => {
     if (targetPos) {
-      // Simple timeout to simulate walking duration (CSS transition handles smoothness)
       setCharPos(targetPos);
       const timeout = setTimeout(() => {
         setIsMoving(false);
         setTargetPos(null);
-      }, 1000); // Matches CSS transition duration
+      }, 1000); 
       return () => clearTimeout(timeout);
     }
   }, [targetPos]);
@@ -92,14 +124,13 @@ const CharacterRoom: React.FC<CharacterRoomProps> = ({ unlockedItems }) => {
             Ruang Saya
           </h2>
           <p className="text-txt-muted text-lg">
-            Klik di lantai untuk berjalan. Koleksi item: <span className="text-white font-bold">{unlockedItems.length} / {ROOM_ITEMS.length}</span>
+            Koleksi Anda: <span className="text-white font-bold">{unlockedItems.length}</span> Item
           </p>
         </div>
         
-        {/* Helper Hint */}
         <div className="bg-primary/10 border border-primary/30 px-4 py-2 rounded-lg text-sm text-primary flex items-center gap-2 animate-pulse">
            <Search size={16} />
-           <span>Selesaikan sesi belajar untuk dapat Item Random!</span>
+           <span>Selesaikan sesi untuk item baru! (Item tak terbatas)</span>
         </div>
       </header>
 
@@ -115,7 +146,7 @@ const CharacterRoom: React.FC<CharacterRoomProps> = ({ unlockedItems }) => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(92,101,230,0.15),transparent_70%)] pointer-events-none"></div>
 
         {/* ITEMS RENDER */}
-        {ROOM_ITEMS.map((item) => {
+        {allDisplayItems.map((item) => {
           const isUnlocked = unlockedItems.includes(item.id);
           if (!isUnlocked) return null;
 
@@ -148,19 +179,16 @@ const CharacterRoom: React.FC<CharacterRoomProps> = ({ unlockedItems }) => {
            }}
         >
            <div className={`relative transition-transform duration-300 ${isMoving ? 'animate-bounce' : ''}`}>
-              {/* Body */}
               <div className={`w-16 h-16 bg-gradient-to-br from-primary to-blue-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(92,101,230,0.8)] border-4 border-white transform ${facing === 'left' ? 'scale-x-[-1]' : 'scale-x-1'}`}>
                  <div className="flex gap-2 mt-1">
                     <div className="w-2 h-2 bg-white rounded-full animate-blink"></div>
                     <div className="w-2 h-2 bg-white rounded-full animate-blink delay-100"></div>
                  </div>
               </div>
-              {/* Name Tag */}
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap border border-white/10">
                  Saya
               </div>
            </div>
-           {/* Shadow */}
            <div className="w-12 h-3 bg-black/60 rounded-full blur-sm mt-1"></div>
         </div>
 
@@ -175,8 +203,9 @@ const CharacterRoom: React.FC<CharacterRoomProps> = ({ unlockedItems }) => {
       </div>
 
       {/* --- INVENTORY LIST --- */}
+      <h3 className="text-xl font-bold text-white mt-8 mb-4 border-b border-line pb-2">Inventaris</h3>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        {ROOM_ITEMS.map((item) => {
+        {allDisplayItems.map((item) => {
           const isUnlocked = unlockedItems.includes(item.id);
 
           return (

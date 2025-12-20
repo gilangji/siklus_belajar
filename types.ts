@@ -7,6 +7,14 @@ export enum AppView {
   CHARACTER = 'CHARACTER' // New View
 }
 
+export interface RoomItem {
+  id: string;
+  name: string;
+  icon: any; // Lucide Icon component
+  position: string; // Tailwind class string
+  color: string; // Tailwind text color class
+}
+
 export interface StudyModule {
   id: string;
   week: number;
