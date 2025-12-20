@@ -78,39 +78,44 @@ export const generateSyllabus = async (customConfig?: { topic: string, duration:
   };
 
   let prompt = `
-    Bertindaklah sebagai Konsultan Kurikulum Pendidikan Tinggi untuk persiapan beasiswa elite (seperti LPDP/Ivy League).
+    Bertindaklah sebagai Konsultan Kurikulum Pendidikan.
     
     TUGAS:
     Buat peta jalan penguasaan materi (Mastery Roadmap) untuk topik "Belajar Efektif & Berpikir Kritis".
     
     KRITERIA KURIKULUM:
-    1. **High-Yield Topics Only:** Jangan sertakan materi "filler" atau terlalu dasar. Fokus pada konsep fundamental yang KRUSIAL dan KONTEMPORER.
-    2. **Struktur:** 4 Fase Logis (Fase 1: Fondasi Kritis -> Fase 4: Sintesis & Evaluasi).
-    3. **Judul Modul:** Gunakan judul yang akademis dan berbobot.
-    4. **Bahasa:** Gunakan Bahasa Indonesia formal dan intelektual.
+    1. Struktur: 4 Fase Logis.
+    2. Bahasa: Gunakan Bahasa Indonesia formal.
   `;
 
   if (customConfig) {
     prompt = `
-      Bertindaklah sebagai Konsultan Kurikulum Pendidikan Tinggi & Riset.
+      Bertindaklah sebagai Perancang Kurikulum Adaptif (Adaptive Curriculum Designer).
       
       KONTEKS PENGGUNA:
       - Topik Target: ${customConfig.topic}
-      - Tujuan: Penguasaan Mendalam (Deep Mastery)
-      - Gaya: ${customConfig.intensity}
+      - Ketersediaan Waktu: ${customConfig.duration}
+      - Gaya/Intensitas: ${customConfig.intensity}
       
       TUGAS:
-      Rancang kurikulum 4 fase yang sangat strategis.
-      
-      INSTRUKSI KHUSUS:
-      1. **Prioritas Materi:** Identifikasi konsep-konsep "Paling Mahal" atau "Paling Penting" dalam topik ini. Abaikan trivia. Fokus pada inti keilmuan yang mendalam.
-      2. **Judul & Deskripsi:** Harus terdengar profesional, meyakinkan, dan mencerminkan kedalaman materi. 
-      3. **Alur:** 
-         - Fase 1: Prinsip Fundamental & Teori Utama.
-         - Fase 2: Mekanisme Kompleks & Analisis.
-         - Fase 3: Aplikasi Kritis & Studi Kasus.
-         - Fase 4: Integrasi, Inovasi, & Masa Depan Topik.
-      4. Gunakan Bahasa Indonesia.
+      Rancang kurikulum 4 fase yang SANGAT SESUAI dengan tingkat kedalaman topik yang diminta.
+
+      ATURAN LOGIKA STRUKTUR (PENTING):
+      Analisis kata kunci dalam "${customConfig.topic}".
+
+      A. JIKA TOPIK BERSIFAT "DASAR", "PEMULA", "BASIC", "PENGENALAN", atau "INTRODUCTION":
+         - Fase 1 (Basic): WAJIB mulai dari SEJARAH, ETIMOLOGI, DEFINISI AWAL, dan ALIRAN PEMIKIRAN LAMA. Jangan langsung masuk ke sains modern yang rumit.
+         - Fase 2 (Foundations): Masuk ke konsep-konsep kunci dan teori klasik.
+         - Fase 3 (Modern): Perkembangan ilmu modern terkait topik tersebut.
+         - Fase 4 (Application): Studi Kasus, Penerapan Nyata, dan Isu Terkini.
+         *Contoh untuk Psikologi Dasar: Mulai dari Wundt/Freud (Fase 1), bukan Neurotransmitter.*
+
+      B. JIKA TOPIK BERSIFAT "LANJUT", "ADVANCED", "MASTERING", atau SPESIFIK:
+         - Langsung fokus pada inti keilmuan yang mendalam, analisis kritis, dan mekanisme kompleks. Abaikan sejarah dasar jika tidak relevan.
+
+      OUTPUT:
+      Kembalikan JSON berisi array 'modules' (tepat 4 modul/fase).
+      Gunakan Bahasa Indonesia.
     `;
   }
 
@@ -121,7 +126,7 @@ export const generateSyllabus = async (customConfig?: { topic: string, duration:
       config: {
         responseMimeType: "application/json",
         responseSchema: schema,
-        systemInstruction: "Anda adalah arsitek kurikulum akademik tingkat lanjut. Anda membenci kedangkalan. Anda menyusun rencana belajar yang padat berisi."
+        systemInstruction: "Anda adalah ahli kurikulum yang peka terhadap konteks. Anda menyusun materi dari akar (sejarah/dasar) menuju daun (aplikasi) jika pengguna meminta materi dasar."
       }
     });
 
@@ -151,42 +156,40 @@ export const generateStudyNotes = async (
 
   // Prompt yang diperbarui untuk kedalaman materi & format tanpa "Bab"
   let basePrompt = `
-    PERAN: Anda adalah **Pakar Riset Utama & Akademisi Senior** di bidang ini.
+    PERAN: Anda adalah **Dosen Akademik & Penulis Buku Teks**.
     TOPIK FOKUS: "${topic}".
-    TARGET AUDIENCE: Kandidat PhD atau Persiapan Beasiswa Elite (LPDP).
+    TARGET AUDIENCE: Pelajar serius yang menginginkan pemahaman utuh (Comprehensive Understanding).
     
     TUGAS UTAMA:
-    Susun sebuah **Diktat Pembelajaran Mendalam (Deep Dive)** yang komprehensif mengenai topik tersebut.
+    Susun sebuah **Materi Pembelajaran (Lecture Notes)** yang sangat mendalam, panjang, dan terstruktur.
     
     ATURAN FORMAT (SANGAT PENTING):
     1. **DILARANG KERAS** menggunakan kata "Bab 1", "Chapter I", "Bagian 1", atau penomoran bab sejenisnya.
     2. Gunakan **Judul Besar** (Markdown #) untuk judul materi.
     3. Gunakan **Sub-Judul** (Markdown ## dan ###) untuk membagi bagian.
-    4. Format harus bersih, langsung pada hierarki topik.
+    4. Gunakan **Tabel Markdown** untuk perbandingan data.
 
-    STANDAR KONTEN:
-    1. **Analisis Kritis:** Jangan hanya mendefinisikan. Analisis *mengapa* hal itu terjadi, *bagaimana* mekanismenya, dan *apa* implikasinya.
-    2. **Perspektif Multidimensi:** Tinjau topik dari berbagai sudut pandang (teoritis, praktis, etis, historis).
-    3. **Kedalaman:** Setiap sub-bagian harus dibahas secara tuntas, detail, dan panjang. Hindari poin-poin singkat (bullet points) jika penjelasan naratif lebih baik.
-    4. **Relevansi:** Pastikan materi benar-benar 100% relevan dengan topik "${topic}". Jangan melebar ke hal umum.
-
-    STRUKTUR YANG DIHARAPKAN:
-    # [Judul Besar Topik - Gunakan Istilah Akademis]
+    PEDOMAN KONTEN (ADAPTIF):
+    - Jika topik adalah tentang **Sejarah/Dasar**: Jelaskan kronologi, tokoh, pemikiran awal, dan evolusinya secara mendetail.
+    - Jika topik adalah tentang **Teknis/Lanjut**: Jelaskan mekanisme, cara kerja, analisis data, dan teori kompleks.
+    - **Kedalaman:** Jangan membuat ringkasan pendek. Tulislah selengkap mungkin (minimal 1000 kata jika memungkinkan). Gali "Why" dan "How".
     
-    ## [Sub-Judul 1: Fondasi Filosofis/Teoritis]
-    (Jelaskan sejarah pemikiran, teori dasar, dan pergeseran paradigma terkait topik ini secara mendalam)
+    STRUKTUR YANG DIHARAPKAN:
+    # [Judul Materi]
+    
+    ## [Sub-Judul 1: Definisi & Konteks]
+    (Jelaskan latar belakang, sejarah, atau definisi fundamental topik ini)
 
-    ## [Sub-Judul 2: Mekanisme Inti & Analisis Struktural]
-    (Jelaskan "How it works" secara sangat detail. Bongkar komponen-komponennya)
+    ## [Sub-Judul 2: Teori Utama / Mekanisme]
+    (Inti materi. Jelaskan secara panjang lebar dan mendalam)
 
-    ## [Tabel Komparasi Kritis]
-    (Wajib sertakan Tabel Markdown yang membandingkan pendekatan/teori berbeda dalam topik ini secara head-to-head)
+    ## [Tabel Analisis / Komparasi]
+    (Wajib sertakan Tabel Markdown yang relevan dengan topik)
 
-    ## [Sub-Judul 3: Isu Kontemporer & Studi Kasus]
-    (Bahas perdebatan saat ini, tantangan modern, atau contoh kasus nyata yang kompleks)
+    ## [Sub-Judul 3: Aplikasi / Studi Kasus / Perspektif Modern]
+    (Bagaimana hal ini diterapkan atau dilihat di masa kini)
 
-    ## [Sintesis & Kesimpulan Kritis]
-    (Rangkuman yang menyatukan semua poin menjadi wawasan baru)
+    ## [Kesimpulan & Poin Kunci]
 
     ${customInstructions ? `INSTRUKSI TAMBAHAN DARI PENGGUNA: "${customInstructions}"` : ""}
   `;
@@ -197,7 +200,7 @@ export const generateStudyNotes = async (
   if (referenceLink) {
     promptContext += `\n
       REFERENSI EKSTERNAL: ${referenceLink}.
-      Instruksi: Akses konten tautan tersebut (melalui Google Search). Integrasikan data, argumen, atau temuan spesifik dari tautan tersebut ke dalam analisis Anda. Jadikan materi ini lebih kaya dengan data eksternal tersebut.
+      Instruksi: Akses konten tautan tersebut (melalui Google Search). Integrasikan data, argumen, atau temuan spesifik dari tautan tersebut ke dalam analisis Anda.
     `;
   }
 
@@ -223,8 +226,7 @@ export const generateStudyNotes = async (
       contents: { parts },
       config: {
         tools: referenceLink ? [{ googleSearch: {} }] : undefined,
-        // System instruction diperkuat untuk memaksa format
-        systemInstruction: "Anda adalah Akademisi Senior. Gaya penulisan Anda: Formal, Padat, Kritis, dan Mendalam. Anda TIDAK PERNAH menggunakan kata 'Bab' atau 'Chapter' dalam struktur judul, melainkan langsung menggunakan Topik sebagai Judul."
+        systemInstruction: "Anda adalah Dosen yang sangat detail. Anda menjelaskan materi dari akar hingga ke buahnya. Anda tidak melompati dasar-dasar jika itu penting untuk pemahaman topik."
       }
     });
 
@@ -265,15 +267,16 @@ export const generateQuiz = async (topic: string, notesContext?: string): Promis
 
   const context = notesContext 
     ? `Berdasarkan materi berikut: ${notesContext.substring(0, 25000)}` 
-    : `Berdasarkan pengetahuan tingkat lanjut tentang "${topic}"`;
+    : `Berdasarkan pengetahuan tentang "${topic}"`;
 
   const prompt = `
     ${context}
     
     TUGAS:
-    Buat 5 pertanyaan kuis tingkat "Analisis" atau "Evaluasi" (HOTS - Higher Order Thinking Skills).
-    Hindari pertanyaan hafalan tahun atau definisi sederhana.
-    Pertanyaan harus menguji pemahaman konsep yang mendalam atau aplikasi teori.
+    Buat 5 pertanyaan kuis tentang topik di atas.
+    - Sesuaikan tingkat kesulitan pertanyaan dengan tingkat kesulitan materi.
+    - Jika materi bersifat dasar/sejarah, tanyakan tentang konsep kunci dan tokoh.
+    - Jika materi bersifat lanjut, tanyakan tentang analisis dan aplikasi.
     
     Format: JSON.
   `;
@@ -321,8 +324,7 @@ export const generateFlashcards = async (topic: string): Promise<Flashcard[]> =>
 
   const prompt = `
     Buat 8 flashcard untuk topik "${topic}".
-    Fokus pada: Konsep Kunci, Istilah Teknis, atau Hubungan Sebab-Akibat.
-    Level: Mahir/Akademik.
+    Fokus pada definisi istilah, tokoh penting, atau konsep kunci yang relevan dengan topik.
   `;
 
   try {
@@ -353,15 +355,15 @@ export const askStudyTutor = async (question: string, contextNotes: string): Pro
   const ai = getAIClient();
   
   const prompt = `
-    PERAN: Tutor Privat Akademik (Level S2/S3).
+    PERAN: Tutor Privat Akademik.
     MATERI:
     ${contextNotes.substring(0, 25000)}
     
     PERTANYAAN SISWA: "${question}"
     
     TUGAS:
-    Jawab dengan mendalam, gunakan analogi cerdas, dan kaitkan kembali ke konsep inti dalam materi.
-    Jangan berikan jawaban satu kalimat. Jelaskan "Mengapa" dan "Bagaimana".
+    Jawab pertanyaan siswa dengan jelas dan edukatif.
+    Gunakan konteks materi yang ada untuk menjawab.
   `;
 
   try {
