@@ -58,7 +58,7 @@ const App: React.FC = () => {
       } catch (err) {
         console.warn("Failed to check session:", err);
       } finally {
-        setLoading(false);
+        // We delay setting loading to false slightly to allow local storage check below
       }
     };
     checkSession();
@@ -69,11 +69,40 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // --- PERSISTENCE LOGIC (Fix for Data Loss on Refresh) ---
+  
+  // 1. Load Data on Mount (Local Storage for Guest / Supabase for User)
   useEffect(() => {
-    if (session?.user && !isGuest) {
-      fetchUserData();
+    const loadData = async () => {
+      if (session?.user && !isGuest) {
+        // Load from Supabase
+        await fetchUserData();
+      } else {
+        // Load from LocalStorage if Guest or no session yet
+        const localModules = localStorage.getItem('guest_modules');
+        const localSessions = localStorage.getItem('guest_sessions');
+        const localUnlocked = localStorage.getItem('guest_unlocked');
+        const localGenerated = localStorage.getItem('guest_generated');
+        const localIsGuest = localStorage.getItem('is_guest_mode');
+
+        if (localModules) setModules(JSON.parse(localModules));
+        if (localSessions) setSessions(JSON.parse(localSessions));
+        if (localUnlocked) setUnlockedItems(JSON.parse(localUnlocked));
+        if (localGenerated) setGeneratedItems(JSON.parse(localGenerated));
+        
+        // If we found local data and no supabase session, assume guest mode continues
+        if (localIsGuest === 'true' && !session) {
+          setIsGuest(true);
+        }
+      }
+      setLoading(false);
+    };
+
+    // Wait for session check to complete roughly
+    if (!loading) {
+       loadData();
     }
-  }, [session, isGuest]);
+  }, [session, isGuest, loading]);
 
   const fetchUserData = async () => {
     if (!session?.user) return;
@@ -87,6 +116,17 @@ const App: React.FC = () => {
       console.error("Connection error:", error);
     }
   };
+
+  // 2. Save Data on Change (LocalStorage for Guest)
+  useEffect(() => {
+    if (isGuest) {
+      localStorage.setItem('guest_modules', JSON.stringify(modules));
+      localStorage.setItem('guest_sessions', JSON.stringify(sessions));
+      localStorage.setItem('guest_unlocked', JSON.stringify(unlockedItems));
+      localStorage.setItem('guest_generated', JSON.stringify(generatedItems));
+      localStorage.setItem('is_guest_mode', 'true');
+    }
+  }, [modules, sessions, unlockedItems, generatedItems, isGuest]);
 
   const progress: UserProgress = {
     totalSessions: sessions.length,
@@ -107,6 +147,8 @@ const App: React.FC = () => {
   const handleLogout = async () => {
     setLoading(true);
     await supabase.auth.signOut();
+    
+    // Clear State
     setSession(null);
     setIsGuest(false);
     setModules([]);
@@ -115,15 +157,26 @@ const App: React.FC = () => {
     setActiveSessionState(null);
     setUnlockedItems(['rug', 'desk']);
     setGeneratedItems([]);
+    
+    // Clear Local Storage
+    localStorage.removeItem('guest_modules');
+    localStorage.removeItem('guest_sessions');
+    localStorage.removeItem('guest_unlocked');
+    localStorage.removeItem('guest_generated');
+    localStorage.removeItem('is_guest_mode');
+    
     setLoading(false);
   };
 
   const handleSaveSession = async (newSession: StudySession) => {
+    // 1. Update Local State immediately
     setSessions(prev => {
       const exists = prev.find(s => s.id === newSession.id);
       if (exists) return prev.map(s => s.id === newSession.id ? newSession : s);
       return [...prev, newSession];
     });
+
+    // 2. Sync to DB if logged in
     if (session?.user && !isGuest) {
       try {
         await supabase.from('sessions').upsert({ ...newSession, user_id: session.user.id });
@@ -131,6 +184,7 @@ const App: React.FC = () => {
          console.error("Exception saving session:", err);
       }
     }
+    // Note: Guest data is saved via useEffect automatically when 'sessions' changes
   };
 
   const handleUnlockReward = () => {
@@ -212,8 +266,8 @@ const App: React.FC = () => {
         <main className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth relative">
           {isGuest && (
             <div className="max-w-7xl mx-auto mb-6 bg-orange-500/10 border border-orange-500/20 text-orange-400 p-3 rounded-lg text-sm flex items-center justify-center gap-2">
-              <span>⚠️ Mode Tamu: Data <strong>tidak akan disimpan</strong> permanen.</span>
-              <button onClick={handleLogout} className="underline hover:text-orange-300">Buat Akun</button>
+              <span>⚠️ Mode Tamu Aktif. Data tersimpan di browser ini.</span>
+              <button onClick={handleLogout} className="underline hover:text-orange-300">Keluar</button>
             </div>
           )}
           

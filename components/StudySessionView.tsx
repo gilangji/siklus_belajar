@@ -293,32 +293,41 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   };
 
   const handleFinishReading = () => {
-    setIsBreak(false);
-    setIsPaused(false);
-    // Stop Audio
-    setCurrentAmbience('NONE');
-    
-    const durationMins = Math.max(1, Math.ceil(elapsedSeconds / 60));
-    const breakMins = Math.ceil(breakSeconds / 60);
+    try {
+      setIsBreak(false);
+      setIsPaused(false);
+      // Stop Audio
+      setCurrentAmbience('NONE');
+      
+      const durationMins = Math.max(1, Math.ceil(elapsedSeconds / 60));
+      const breakMins = Math.ceil(breakSeconds / 60);
 
-    const interimSession: StudySession = {
-      id: currentSessionId,
-      date: new Date().toISOString().split('T')[0],
-      topic,
-      referenceLink: link,
-      startTime,
-      durationMinutes: durationMins,
-      breakMinutes: breakMins,
-      notes,
-      quiz: generatedQuiz,
-      quizScore: undefined
-    };
-    onSaveSession(interimSession);
+      const interimSession: StudySession = {
+        id: currentSessionId || Date.now().toString(), // Fallback if ID invalid
+        date: new Date().toISOString().split('T')[0],
+        topic: topic || "Sesi Tanpa Judul",
+        referenceLink: link,
+        startTime: startTime || new Date().toLocaleTimeString(),
+        durationMinutes: durationMins,
+        breakMinutes: breakMins,
+        notes: notes || "",
+        quiz: generatedQuiz || [],
+        quizScore: undefined
+      };
+      
+      // Save progress to App state (and DB/LocalStorage)
+      onSaveSession(interimSession);
 
-    if (generatedQuiz.length > 0) {
-      setStep('QUIZ');
-    } else {
-      finishSession(0);
+      // Transition Logic: Only go to quiz if valid questions exist
+      if (generatedQuiz && generatedQuiz.length > 0) {
+        setStep('QUIZ');
+      } else {
+        finishSession(0);
+      }
+    } catch (err) {
+      console.error("Error in handleFinishReading:", err);
+      // Fallback to avoid black screen
+      setStep('RESULT');
     }
   };
 
@@ -336,37 +345,51 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
 
   const calculateScore = (answers: number[]) => {
     let correct = 0;
-    generatedQuiz.forEach((q, idx) => {
-      if (q.correctAnswerIndex === answers[idx]) correct++;
-    });
-    const finalScore = Math.round((correct / generatedQuiz.length) * 100);
-    setScore(finalScore);
-    finishSession(finalScore);
+    if (generatedQuiz && generatedQuiz.length > 0) {
+      generatedQuiz.forEach((q, idx) => {
+        if (q.correctAnswerIndex === answers[idx]) correct++;
+      });
+      const finalScore = Math.round((correct / generatedQuiz.length) * 100);
+      setScore(finalScore);
+      finishSession(finalScore);
+    } else {
+      finishSession(0);
+    }
   };
 
   const finishSession = (finalScore: number) => {
-    const durationMins = Math.max(1, Math.ceil(elapsedSeconds / 60));
-    const breakMins = Math.ceil(breakSeconds / 60);
-    
-    const session: StudySession = {
-      id: currentSessionId,
-      date: new Date().toISOString().split('T')[0],
-      topic,
-      referenceLink: link,
-      startTime,
-      durationMinutes: durationMins, 
-      breakMinutes: breakMins,
-      notes,
-      quiz: generatedQuiz,
-      quizScore: finalScore
-    };
-    onSaveSession(session);
-    
-    // TRIGGER REWARD HERE
-    const reward = onUnlockReward();
-    setNewReward(reward);
-    
-    setStep('RESULT');
+    try {
+      const durationMins = Math.max(1, Math.ceil(elapsedSeconds / 60));
+      const breakMins = Math.ceil(breakSeconds / 60);
+      
+      const session: StudySession = {
+        id: currentSessionId || Date.now().toString(),
+        date: new Date().toISOString().split('T')[0],
+        topic: topic || "Sesi Tanpa Judul",
+        referenceLink: link,
+        startTime: startTime || new Date().toLocaleTimeString(),
+        durationMinutes: durationMins, 
+        breakMinutes: breakMins,
+        notes: notes || "",
+        quiz: generatedQuiz || [],
+        quizScore: finalScore
+      };
+      
+      onSaveSession(session);
+      
+      // TRIGGER REWARD HERE
+      // Safety check for callback
+      if (onUnlockReward) {
+         const reward = onUnlockReward();
+         setNewReward(reward);
+      }
+      
+      setStep('RESULT');
+    } catch (err) {
+      console.error("Error in finishSession:", err);
+      // Force result screen so user isn't stuck
+      setStep('RESULT');
+    }
   };
 
   const handleDownloadPDF = () => {
@@ -499,7 +522,6 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   if (step === 'LEARNING') {
       return (
       <div className="max-w-7xl mx-auto h-[calc(100vh-140px)] flex flex-col animate-fade-in">
-        {/* MODIFIED: Removed overflow-hidden from the card container to allow dropdowns to be visible */}
         <div className="mb-4 glass-card rounded-xl flex flex-col relative">
           {/* Progress Bar Container: Wrapped in its own overflow-hidden container to maintain rounded corner masking */}
           <div className="absolute top-0 left-0 w-full h-1 rounded-t-xl overflow-hidden">
@@ -666,6 +688,85 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // QUIZ (Updated for light mode text)
+  if (step === 'QUIZ') {
+    // Safety check to prevent crash if quiz is empty
+    if (!generatedQuiz || generatedQuiz.length === 0) {
+      setStep('RESULT');
+      return null;
+    }
+
+    const question = generatedQuiz[currentQuestionIdx];
+    
+    // Safety check for current question
+    if (!question) {
+       return (
+         <div className="text-center p-10 text-txt-muted">
+           <p>Terjadi kesalahan memuat pertanyaan.</p>
+           <button onClick={() => setStep('RESULT')} className="mt-4 px-4 py-2 bg-primary text-white rounded">Lihat Hasil</button>
+         </div>
+       );
+    }
+
+    return (
+      <div className="max-w-3xl mx-auto mt-12 animate-fade-in">
+        <div className="flex justify-center mb-8">
+           <div className="flex items-center gap-3 text-txt-main bg-surfaceLight border border-line px-5 py-2 rounded-full font-mono font-bold shadow-lg">
+              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+              {formatTime(elapsedSeconds)}
+           </div>
+        </div>
+        <div className="glass-card p-10 rounded-2xl relative overflow-hidden">
+           <div className="absolute top-0 left-0 w-full h-1 bg-surfaceLight"><div className="h-full bg-primary transition-all duration-500 ease-out" style={{ width: `${((currentQuestionIdx + 1) / generatedQuiz.length) * 100}%` }}/></div>
+          <div className="flex justify-between items-center mb-8"><span className="text-xs font-bold text-txt-dim uppercase tracking-widest">Pertanyaan {currentQuestionIdx + 1} / {generatedQuiz.length}</span></div>
+          <h3 className="text-2xl font-bold text-txt-main mb-10 leading-relaxed">{question.question}</h3>
+          <div className="space-y-4">
+            {question.options.map((opt, idx) => (
+              <button key={idx} onClick={() => handleAnswer(idx)} className="w-full text-left p-5 rounded-xl border border-line bg-surfaceLight/30 hover:border-primary hover:bg-primary/10 text-txt-muted hover:text-txt-main transition-all flex items-center group relative overflow-hidden">
+                <span className="w-8 h-8 rounded-lg bg-surfaceLight text-txt-dim flex items-center justify-center mr-5 group-hover:bg-primary group-hover:text-white text-sm font-bold border border-line group-hover:border-primary">{String.fromCharCode(65 + idx)}</span>
+                <span className="text-lg font-medium">{opt}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // RESULT VIEW
+  if (step === 'RESULT') {
+    return (
+      <div className="max-w-md mx-auto mt-10 text-center animate-fade-in pb-20">
+        
+        {/* REWARD CARD */}
+        {newReward && (
+          <div className="mb-8 animate-bounce-slow">
+             <div className="glass-card p-6 rounded-3xl border-primary/50 shadow-[0_0_50px_rgba(92,101,230,0.3)] bg-gradient-to-br from-primary/20 to-surface">
+                <div className="flex justify-center mb-4">
+                   <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center text-primary shadow-inner animate-pulse">
+                      <Gift size={40} />
+                   </div>
+                </div>
+                <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-1">Item Baru Terbuka!</h3>
+                <h2 className="text-2xl font-bold text-txt-main mb-2">{newReward.name}</h2>
+                <p className="text-xs text-txt-muted">Cek di "Ruang Saya" sekarang.</p>
+             </div>
+          </div>
+        )}
+
+        <div className="glass-card p-12 rounded-3xl shadow-2xl relative overflow-hidden">
+          <h2 className="text-4xl font-bold text-txt-main mb-3">Sesi Selesai!</h2>
+          <div className="flex justify-center gap-3 text-sm mb-10">
+             <span className="flex items-center gap-1.5 bg-surfaceLight border border-line px-4 py-2 rounded-lg text-txt-main"><Clock size={16} className="text-primary" /> {formatTime(elapsedSeconds)}</span>
+             {breakSeconds > 0 && <span className="flex items-center gap-1.5 bg-surfaceLight border border-line px-4 py-2 rounded-lg text-txt-main"><Coffee size={16} className="text-orange-400" /> {formatTime(breakSeconds)}</span>}
+          </div>
+          <div className="bg-surfaceLight/50 rounded-2xl p-6 mb-10 border border-line"><p className="text-xs text-txt-dim uppercase tracking-widest font-bold mb-2">Skor Akhir</p><p className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-txt-main to-txt-muted">{score}%</p></div>
+          <button onClick={() => { setStep('SETUP'); setTopic(''); setLink(''); setFile(null); setNotes(''); setElapsedSeconds(0); setBreakSeconds(0); setIsBreak(false); setNewReward(null); if (onSessionUpdate) onSessionUpdate(null); }} className="w-full bg-txt-main text-surface py-4 rounded-xl font-bold hover:opacity-90 transition-colors shadow-lg">Mulai Sesi Baru</button>
         </div>
       </div>
     );
