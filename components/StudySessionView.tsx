@@ -8,9 +8,11 @@ import { Loader2, Youtube, Clock, BookOpen, ArrowRight, Save, PlayCircle, Timer,
 interface StudySessionViewProps {
   initialTopic?: string;
   onSaveSession: (session: StudySession) => void;
+  // Callback to update parent about timer status for persistent display
+  onSessionUpdate?: (state: { isActive: boolean; topic: string; elapsedSeconds: number; isBreak: boolean } | null) => void;
 }
 
-const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSaveSession }) => {
+const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSaveSession, onSessionUpdate }) => {
   const [step, setStep] = useState<'SETUP' | 'LEARNING' | 'QUIZ' | 'RESULT'>('SETUP');
   
   // Setup State
@@ -21,6 +23,9 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   const [customInstructions, setCustomInstructions] = useState('');
   const [startTime, setStartTime] = useState('');
   
+  // Internal Session Management
+  const [currentSessionId, setCurrentSessionId] = useState<string>('');
+
   // Timer Configuration State
   const [targetStudyMinutes, setTargetStudyMinutes] = useState(25);
   const [targetBreakMinutes, setTargetBreakMinutes] = useState(5);
@@ -52,9 +57,12 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
+  // Sync initial topic only if we are in setup mode to avoid overwriting active sessions
   useEffect(() => {
-    if (initialTopic) setTopic(initialTopic);
-  }, [initialTopic]);
+    if (initialTopic && step === 'SETUP') {
+      setTopic(initialTopic);
+    }
+  }, [initialTopic, step]);
 
   useEffect(() => {
     if (isChatOpen) {
@@ -66,25 +74,54 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   useEffect(() => {
     let interval: any;
     
-    if (step === 'LEARNING') {
+    // Only run timer in Learning phase, and also Quiz phase (always active)
+    const isRunning = step === 'LEARNING' || step === 'QUIZ';
+
+    if (isRunning) {
+      // Immediate update to parent
+      if (onSessionUpdate) {
+         onSessionUpdate({
+           isActive: true,
+           topic: topic,
+           elapsedSeconds: step === 'QUIZ' ? elapsedSeconds : (isBreak ? breakSessionSeconds : sessionSeconds), // Just for display
+           isBreak: isBreak && step !== 'QUIZ'
+         });
+      }
+
       interval = setInterval(() => {
-        if (isBreak) {
-          setBreakSeconds((prev) => prev + 1);       // Total akumulatif
-          setBreakSessionSeconds((prev) => prev + 1); // Sesi istirahat ini
-        } else {
-          setElapsedSeconds((prev) => prev + 1);     // Total akumulatif
-          setSessionSeconds((prev) => prev + 1);     // Sesi belajar ini
+        // Update internal state
+        if (step === 'LEARNING') {
+           if (isBreak) {
+             setBreakSeconds((prev) => prev + 1);       
+             setBreakSessionSeconds((prev) => prev + 1); 
+           } else {
+             setElapsedSeconds((prev) => prev + 1);     
+             setSessionSeconds((prev) => prev + 1);     
+           }
+        } else if (step === 'QUIZ') {
+           setElapsedSeconds((prev) => prev + 1);
         }
+
+        // Update parent for persistent widget
+        if (onSessionUpdate) {
+           onSessionUpdate({
+             isActive: true,
+             topic: topic,
+             elapsedSeconds: step === 'QUIZ' ? elapsedSeconds + 1 : (isBreak ? breakSessionSeconds + 1 : sessionSeconds + 1),
+             isBreak: isBreak && step !== 'QUIZ'
+           });
+        }
+
       }, 1000);
-    } else if (step === 'QUIZ') {
-      // Saat kuis, selalu dianggap waktu aktif (bukan istirahat)
-      interval = setInterval(() => {
-        setElapsedSeconds((prev) => prev + 1);
-      }, 1000);
+    } else {
+      // If we are in Setup or Result, the session is technically "inactive" for the timer widget
+      if (onSessionUpdate) {
+        onSessionUpdate(null);
+      }
     }
 
     return () => clearInterval(interval);
-  }, [step, isBreak]);
+  }, [step, isBreak, topic, elapsedSeconds, sessionSeconds, breakSessionSeconds]);
 
   // Format Helper: MM:SS
   const formatTime = (totalSeconds: number) => {
@@ -135,7 +172,13 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
         return;
     }
     
-    setStartTime(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }));
+    const startTimeVal = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    setStartTime(startTimeVal);
+    
+    // Generate new Session ID immediately
+    const newSessionId = Date.now().toString();
+    setCurrentSessionId(newSessionId);
+
     setLoading(true);
     setElapsedSeconds(0);
     setBreakSeconds(0);
@@ -157,6 +200,20 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
       const quizResult = await generateQuiz(effectiveTopic, notesResult);
       setGeneratedQuiz(quizResult);
       
+      // --- AUTO SAVE IMMEDIATELY ---
+      const initialSession: StudySession = {
+        id: newSessionId,
+        date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+        topic: effectiveTopic,
+        referenceLink: link,
+        startTime: startTimeVal,
+        durationMinutes: 0, // Will be updated later
+        notes: notesResult,
+        quiz: quizResult,
+        quizScore: undefined // Indicates not yet taken
+      };
+      onSaveSession(initialSession);
+
       setStep('LEARNING');
     } catch (e) {
       alert("Terjadi kesalahan saat membuat konten. Periksa API Key Anda.");
@@ -186,6 +243,22 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
 
   const handleFinishReading = () => {
     setIsBreak(false);
+    
+    // Intermediate save when finishing reading
+    const durationMins = Math.max(1, Math.ceil(elapsedSeconds / 60));
+    const interimSession: StudySession = {
+      id: currentSessionId,
+      date: new Date().toISOString().split('T')[0],
+      topic,
+      referenceLink: link,
+      startTime,
+      durationMinutes: durationMins,
+      notes,
+      quiz: generatedQuiz,
+      quizScore: undefined
+    };
+    onSaveSession(interimSession);
+
     if (generatedQuiz.length > 0) {
       setStep('QUIZ');
     } else {
@@ -218,8 +291,9 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   const finishSession = (finalScore: number) => {
     const durationMins = Math.max(1, Math.ceil(elapsedSeconds / 60));
     
+    // Update existing session with final details
     const session: StudySession = {
-      id: Date.now().toString(),
+      id: currentSessionId, // Use the same ID to update
       date: new Date().toISOString().split('T')[0],
       topic,
       referenceLink: link,
@@ -236,46 +310,42 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   const handleDownloadPDF = () => {
     if (!contentRef.current) return;
     
-    // 1. CLONE Element to avoid modifying the visible UI
+    // 1. CLONE Element
     const originalElement = contentRef.current;
     const clone = originalElement.cloneNode(true) as HTMLElement;
 
-    // 2. APPLY "PRINTER FRIENDLY" STYLES TO CLONE
-    // Reset background and text color to standard document format
+    // 2. APPLY STYLES
     clone.style.backgroundColor = '#ffffff';
     clone.style.color = '#000000';
     clone.style.padding = '40px';
     clone.style.width = '100%';
     clone.style.maxWidth = '100%';
 
-    // Fix Typography: Switch from prose-invert (dark mode) to standard prose (light mode)
     const article = clone.querySelector('article');
     if (article) {
       article.classList.remove('prose-invert');
       article.classList.remove('prose-headings:text-white');
       article.classList.remove('prose-strong:text-white');
-      // Add explicit dark colors for headers/strong text
       article.classList.add('prose-headings:text-black');
       article.classList.add('prose-strong:text-black');
       article.classList.add('prose-slate');
     }
 
-    // Fix Tables: Ensure borders and text are visible on white background
     const tables = clone.querySelectorAll('table');
     tables.forEach((t) => {
        if (t instanceof HTMLElement) {
           t.style.color = '#000000';
           t.style.borderCollapse = 'collapse';
           t.style.width = '100%';
-          t.style.borderColor = '#cbd5e1'; // slate-300
+          t.style.borderColor = '#cbd5e1'; 
        }
     });
 
     const ths = clone.querySelectorAll('th');
     ths.forEach((t) => {
        if (t instanceof HTMLElement) {
-          t.style.backgroundColor = '#f1f5f9'; // slate-100
-          t.style.color = '#0f172a'; // slate-900
+          t.style.backgroundColor = '#f1f5f9'; 
+          t.style.color = '#0f172a'; 
           t.style.border = '1px solid #cbd5e1';
        }
     });
@@ -283,12 +353,11 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
     const tds = clone.querySelectorAll('td');
     tds.forEach((t) => {
        if (t instanceof HTMLElement) {
-          t.style.color = '#334155'; // slate-700
+          t.style.color = '#334155'; 
           t.style.border = '1px solid #e2e8f0';
        }
     });
 
-    // Clean up any other "text-white" or light classes
     const allElements = clone.querySelectorAll('*');
     allElements.forEach((el) => {
       if (el instanceof HTMLElement) {
@@ -298,7 +367,7 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
       }
     });
 
-    // 3. GENERATE PDF FROM CLONE
+    // 3. GENERATE
     const opt = {
       margin: 15,
       filename: `StudyFlow_Materi_${topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
@@ -794,6 +863,9 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
               setSessionSeconds(0);
               setBreakSessionSeconds(0);
               setIsBreak(false);
+              setCurrentSessionId('');
+              // Notify parent that session is cleared/inactive
+              if (onSessionUpdate) onSessionUpdate(null);
             }}
             className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-gray-200 transition-colors shadow-lg"
           >

@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { StudyModule } from '../types';
 import { generateSyllabus } from '../services/geminiService';
-import { CheckCircle2, Circle, Loader2, Sparkles, AlertCircle, Settings2, X, GraduationCap, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Circle, Loader2, Sparkles, AlertCircle, Settings2, X, GraduationCap, ArrowRight, Check } from 'lucide-react';
 
 interface PlannerProps {
   modules: StudyModule[];
   setModules: (modules: StudyModule[]) => void;
   onStartStudy: (topic: string) => void;
+  completedTopics?: Set<string>; // New prop
 }
 
-const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy }) => {
+const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy, completedTopics = new Set() }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showWizard, setShowWizard] = useState(false);
@@ -203,15 +204,25 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy }) 
                         Topik Fokus
                       </h4>
                       <div className="flex flex-wrap gap-2.5">
-                        {module.topics.map((topic, i) => (
-                          <button
-                            key={i}
-                            onClick={() => onStartStudy(topic)}
-                            className="bg-surfaceLight hover:bg-primary hover:text-white border border-line hover:border-primary/50 text-txt-muted px-4 py-2 rounded-lg text-sm transition-all cursor-pointer font-medium hover:scale-105 transform duration-150"
-                          >
-                            {topic}
-                          </button>
-                        ))}
+                        {module.topics.map((topic, i) => {
+                          const isCompleted = completedTopics.has(topic.trim().toLowerCase());
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => onStartStudy(topic)}
+                              className={`
+                                relative border px-4 py-2 rounded-lg text-sm transition-all cursor-pointer font-medium hover:scale-105 transform duration-150 flex items-center gap-2
+                                ${isCompleted 
+                                  ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20' 
+                                  : 'bg-surfaceLight border-line text-txt-muted hover:bg-primary hover:text-white hover:border-primary/50'
+                                }
+                              `}
+                            >
+                              {isCompleted && <Check size={14} className="text-green-500" />}
+                              {topic}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
