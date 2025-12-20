@@ -39,9 +39,34 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy, co
       // IMPORTANT: Pass 'true' as second argument to indicate this is a REPLACEMENT plan
       setModules(newModules, true);
     } catch (err: any) {
-      // Display specific error message
+      // Display specific error message with JSON parsing if needed
       console.error("Planner Generation Error:", err);
-      setError(`Gagal membuat rencana. ${err.message || "Periksa koneksi atau API key Anda."}`);
+      let errorText = err.message || "Periksa koneksi atau API key Anda.";
+      
+      // Clean up API JSON errors for display
+      if (errorText.includes('{')) {
+        try {
+           // Try to find the JSON part if mixed with text
+           const jsonStart = errorText.indexOf('{');
+           const jsonPart = errorText.substring(jsonStart);
+           const errorObj = JSON.parse(jsonPart);
+           
+           if (errorObj?.error?.code === 429 || errorObj?.error?.status === 'RESOURCE_EXHAUSTED') {
+             errorText = "Kuota API Gratis Harian Terlampaui. Mohon tunggu beberapa saat sebelum mencoba lagi.";
+           } else if (errorObj?.error?.message) {
+             errorText = errorObj.error.message;
+           }
+        } catch (e) {
+          // ignore parsing fail
+        }
+      }
+      
+      // Fallback check for text
+      if (errorText.toLowerCase().includes('quota') || errorText.includes('429')) {
+         errorText = "Kuota API sedang sibuk atau habis. Sistem sedang mencoba ulang otomatis, silakan coba lagi nanti jika masih gagal.";
+      }
+
+      setError(`Gagal membuat rencana: ${errorText}`);
     } finally {
       setLoading(false);
     }
@@ -155,7 +180,7 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy, co
       {error && (
         <div className="bg-red-500/10 text-red-400 p-4 rounded-lg flex items-center gap-3 border border-red-500/20 animate-fade-in">
           <AlertCircle size={20} className="shrink-0" />
-          <span className="text-sm">{error}</span>
+          <span className="text-sm leading-relaxed">{error}</span>
         </div>
       )}
 

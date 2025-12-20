@@ -13,6 +13,45 @@ const getAIClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
+// Helper for delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Wrapper for API calls with retry logic
+const generateContentWithRetry = async (ai: GoogleGenAI, params: any, retries = 2): Promise<any> => {
+  try {
+    return await ai.models.generateContent(params);
+  } catch (error: any) {
+    // Check for 429 or quota related errors in various formats
+    const msg = error.message?.toLowerCase() || '';
+    const isRateLimit = error.status === 429 || 
+                        error.code === 429 || 
+                        msg.includes('429') || 
+                        msg.includes('quota') || 
+                        msg.includes('resource_exhausted');
+    
+    if (isRateLimit && retries > 0) {
+      // Try to parse retry time from error message e.g. "Please retry in 27.68s"
+      const match = error.message?.match(/retry in ([0-9.]+)s/);
+      let waitTime = 3000 * (3 - retries); // Default increasing backoff: 3s, 6s
+      
+      if (match && match[1]) {
+        // Add 1s buffer to the requested wait time
+        waitTime = Math.ceil(parseFloat(match[1]) * 1000) + 1000;
+      }
+      
+      console.warn(`Rate limit hit. Retrying in ${waitTime}ms... (${retries} retries left)`);
+      
+      // If wait time is reasonable (< 60s), we wait and retry. 
+      // Otherwise we throw to let user know they need to wait a long time.
+      if (waitTime < 60000) {
+        await delay(waitTime);
+        return generateContentWithRetry(ai, params, retries - 1);
+      }
+    }
+    throw error;
+  }
+};
+
 // 1. Generate a structured Study Plan (Syllabus) - Default or Custom
 export const generateSyllabus = async (customConfig?: { topic: string, duration: string, intensity: string }): Promise<StudyModule[]> => {
   const ai = getAIClient();
@@ -64,7 +103,7 @@ export const generateSyllabus = async (customConfig?: { topic: string, duration:
   }
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
@@ -156,7 +195,7 @@ export const generateStudyNotes = async (
   parts.push({ text: promptContext });
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: 'gemini-3-flash-preview', 
       contents: { parts }, // Send parts array
       config: {
@@ -213,7 +252,7 @@ export const generateQuiz = async (topic: string, notesContext?: string): Promis
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
@@ -263,7 +302,7 @@ export const generateFlashcards = async (topic: string): Promise<Flashcard[]> =>
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
@@ -305,7 +344,7 @@ export const askStudyTutor = async (question: string, contextNotes: string): Pro
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: 'gemini-3-flash-preview',
       contents: prompt
     });
