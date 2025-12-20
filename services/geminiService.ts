@@ -1,12 +1,14 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { StudyModule, QuizQuestion, Flashcard, GeneratedSyllabusResponse, GeneratedQuizResponse, GeneratedFlashcardResponse } from "../types";
 
-const apiKey = process.env.API_KEY;
-
 // Initialize Gemini client only when needed to ensure key availability
 const getAIClient = () => {
+  // Use process.env.API_KEY directly as per guidelines
+  const apiKey = process.env.API_KEY;
+
   if (!apiKey) {
-    throw new Error("API Key is missing");
+    console.error("API Key not found. Please set API_KEY in your environment variables.");
+    throw new Error("API Key hilang. Pastikan konfigurasi environment variable API_KEY sudah benar.");
   }
   return new GoogleGenAI({ apiKey });
 };
@@ -81,9 +83,9 @@ export const generateSyllabus = async (customConfig?: { topic: string, duration:
       completed: false
     }));
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating syllabus:", error);
-    throw error;
+    throw new Error(error.message || "Gagal menghubungi AI.");
   }
 };
 
@@ -167,7 +169,7 @@ export const generateStudyNotes = async (
 
   } catch (error) {
     console.error("Error generating notes:", error);
-    return `Gagal membuat catatan. Silakan coba lagi. Detail: ${error}`;
+    throw error; // Rethrow so UI knows it failed
   }
 };
 
@@ -225,7 +227,7 @@ export const generateQuiz = async (topic: string, notesContext?: string): Promis
 
   } catch (error) {
     console.error("Error generating quiz:", error);
-    return [];
+    return []; // Return empty quiz on fail, don't break app
   }
 };
 

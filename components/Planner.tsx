@@ -38,8 +38,10 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy, co
       const newModules = await generateSyllabus(config);
       // IMPORTANT: Pass 'true' as second argument to indicate this is a REPLACEMENT plan
       setModules(newModules, true);
-    } catch (err) {
-      setError("Gagal membuat rencana. Periksa koneksi atau API key Anda.");
+    } catch (err: any) {
+      // Display specific error message
+      console.error("Planner Generation Error:", err);
+      setError(`Gagal membuat rencana. ${err.message || "Periksa koneksi atau API key Anda."}`);
     } finally {
       setLoading(false);
     }
@@ -151,9 +153,9 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy, co
       )}
 
       {error && (
-        <div className="bg-red-500/10 text-red-400 p-4 rounded-lg flex items-center gap-3 border border-red-500/20">
-          <AlertCircle size={20} />
-          {error}
+        <div className="bg-red-500/10 text-red-400 p-4 rounded-lg flex items-center gap-3 border border-red-500/20 animate-fade-in">
+          <AlertCircle size={20} className="shrink-0" />
+          <span className="text-sm">{error}</span>
         </div>
       )}
 
