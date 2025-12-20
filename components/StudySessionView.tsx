@@ -426,7 +426,7 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   if (step === 'SETUP') {
      return (
       <div className="max-w-3xl mx-auto glass-card p-10 rounded-2xl animate-fade-in mb-10 mt-6">
-        <h2 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+        <h2 className="text-3xl font-bold text-txt-main mb-2 flex items-center gap-3">
           <div className="p-2 bg-primary rounded-lg shadow-lg shadow-primary/30 text-white"><PlayCircle size={24} /></div>
           Mulai Sesi
         </h2>
@@ -444,8 +444,8 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
                   <div className="flex items-center gap-3 text-txt-muted w-full"><Upload size={18} /><span className="text-sm">Klik untuk pilih file...</span></div>
                 ) : (
                   <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2 overflow-hidden"><FileText size={18} className="text-primary flex-shrink-0" /><span className="text-sm font-medium text-white truncate">{file.name}</span></div>
-                    <button onClick={(e) => { e.stopPropagation(); setFile(null); }} className="p-1 hover:bg-white/10 rounded-full text-txt-dim hover:text-white"><X size={16} /></button>
+                    <div className="flex items-center gap-2 overflow-hidden"><FileText size={18} className="text-primary flex-shrink-0" /><span className="text-sm font-medium text-txt-main truncate">{file.name}</span></div>
+                    <button onClick={(e) => { e.stopPropagation(); setFile(null); }} className="p-1 hover:bg-surface rounded-full text-txt-dim hover:text-red-500"><X size={16} /></button>
                   </div>
                 )}
               </div>
@@ -453,31 +453,31 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
 
           <div className="group">
             <label className="block text-sm font-semibold text-txt-muted mb-2 group-focus-within:text-primary transition-colors">Topik Pembelajaran</label>
-            <input type="text" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={file ? `Menggunakan materi dari: ${file.name}` : "cth: Pengantar Machine Learning"} className="w-full p-3.5 bg-surfaceLight/50 border border-line rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-white placeholder-txt-dim"/>
+            <input type="text" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={file ? `Menggunakan materi dari: ${file.name}` : "cth: Pengantar Machine Learning"} className="w-full p-3.5 bg-surfaceLight/50 border border-line rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-txt-main placeholder-txt-dim"/>
           </div>
 
           <div className="group">
               <label className="block text-sm font-semibold text-txt-muted mb-2 group-focus-within:text-primary transition-colors">Sumber Referensi (URL Opsional)</label>
               <div className="relative">
                 <Youtube className="absolute left-4 top-3.5 text-txt-dim group-focus-within:text-red-500 transition-colors" size={20} />
-                <input type="text" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://youtube.com/..." className="w-full pl-12 p-3.5 bg-surfaceLight/50 border border-line rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-white placeholder-txt-dim"/>
+                <input type="text" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://youtube.com/..." className="w-full pl-12 p-3.5 bg-surfaceLight/50 border border-line rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-txt-main placeholder-txt-dim"/>
               </div>
           </div>
 
           <div className="p-5 rounded-xl border border-line bg-surfaceLight/20">
-            <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2"><Hourglass size={16} className="text-primary" /> Manajemen Waktu</h3>
+            <h3 className="text-sm font-bold text-txt-main mb-4 flex items-center gap-2"><Hourglass size={16} className="text-primary" /> Manajemen Waktu</h3>
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs font-semibold text-txt-dim mb-1.5 uppercase tracking-wider">Durasi Belajar (Menit)</label>
                 <div className="relative">
-                   <input type="number" min="1" value={targetStudyMinutes} onChange={(e) => setTargetStudyMinutes(Number(e.target.value))} className="w-full p-3 bg-surfaceLight border border-line rounded-lg focus:ring-2 focus:ring-primary outline-none text-white font-mono text-center"/>
+                   <input type="number" min="1" value={targetStudyMinutes} onChange={(e) => setTargetStudyMinutes(Number(e.target.value))} className="w-full p-3 bg-surfaceLight border border-line rounded-lg focus:ring-2 focus:ring-primary outline-none text-txt-main font-mono text-center"/>
                    <span className="absolute right-3 top-3 text-txt-dim text-xs">min</span>
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-txt-dim mb-1.5 uppercase tracking-wider">Durasi Istirahat (Menit)</label>
                 <div className="relative">
-                   <input type="number" min="1" value={targetBreakMinutes} onChange={(e) => setTargetBreakMinutes(Number(e.target.value))} className="w-full p-3 bg-surfaceLight border border-line rounded-lg focus:ring-2 focus:ring-primary outline-none text-white font-mono text-center"/>
+                   <input type="number" min="1" value={targetBreakMinutes} onChange={(e) => setTargetBreakMinutes(Number(e.target.value))} className="w-full p-3 bg-surfaceLight border border-line rounded-lg focus:ring-2 focus:ring-primary outline-none text-txt-main font-mono text-center"/>
                    <span className="absolute right-3 top-3 text-txt-dim text-xs">min</span>
                 </div>
               </div>
@@ -495,9 +495,8 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
     );
   }
 
-  // --- RENDER LEARNING (Same as before) ---
+  // --- RENDER LEARNING ---
   if (step === 'LEARNING') {
-      // (Abbreviated, keeps existing learning view logic)
       return (
       <div className="max-w-7xl mx-auto h-[calc(100vh-140px)] flex flex-col animate-fade-in">
         <div className="mb-4 glass-card rounded-xl overflow-hidden flex flex-col relative">
@@ -514,16 +513,16 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
                <div className="min-w-0">
                  <p className="text-xs text-txt-dim font-bold uppercase tracking-wider mb-0.5 flex items-center gap-2">
                     {timerStatus.label}
-                    {isPaused && <span className="text-yellow-400 bg-yellow-400/10 px-1.5 rounded text-[10px]">PAUSED</span>}
+                    {isPaused && <span className="text-yellow-500 bg-yellow-500/10 px-1.5 rounded text-[10px] border border-yellow-500/20">PAUSED</span>}
                  </p>
-                 <h2 className="text-lg font-bold text-white truncate">{topic}</h2>
+                 <h2 className="text-lg font-bold text-txt-main truncate">{topic}</h2>
                </div>
             </div>
             <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
                <div className="relative">
                   <button 
                     onClick={() => setShowAmbienceMenu(!showAmbienceMenu)}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border transition-all ${currentAmbience !== 'NONE' ? 'bg-primary/10 text-primary border-primary/30' : 'bg-surfaceLight border-line text-txt-muted hover:text-white'}`}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border transition-all ${currentAmbience !== 'NONE' ? 'bg-primary/10 text-primary border-primary/30' : 'bg-surfaceLight border-line text-txt-muted hover:text-txt-main'}`}
                     title="Suara Latar (Fokus)"
                   >
                      <Music size={18} />
@@ -533,16 +532,16 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
                     <div className="absolute top-full right-0 mt-2 w-48 bg-surface border border-line rounded-xl shadow-2xl p-2 z-50 animate-fade-in">
                        <p className="text-[10px] text-txt-dim font-bold uppercase tracking-wider mb-2 px-2">Suara Latar</p>
                        <div className="space-y-1">
-                          <button onClick={() => setCurrentAmbience('NONE')} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'NONE' ? 'bg-white/10 text-white' : 'text-txt-muted hover:bg-white/5 hover:text-white'}`}>
+                          <button onClick={() => setCurrentAmbience('NONE')} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'NONE' ? 'bg-surfaceLight text-txt-main' : 'text-txt-muted hover:bg-surfaceLight hover:text-txt-main'}`}>
                              <VolumeX size={14} /> Hening
                           </button>
-                          <button onClick={() => setCurrentAmbience('RAIN')} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'RAIN' ? 'bg-primary/20 text-primary' : 'text-txt-muted hover:bg-white/5 hover:text-white'}`}>
+                          <button onClick={() => setCurrentAmbience('RAIN')} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'RAIN' ? 'bg-primary/20 text-primary' : 'text-txt-muted hover:bg-surfaceLight hover:text-txt-main'}`}>
                              <CloudRain size={14} /> Hujan
                           </button>
-                          <button onClick={() => setCurrentAmbience('FIRE')} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'FIRE' ? 'bg-orange-500/20 text-orange-400' : 'text-txt-muted hover:bg-white/5 hover:text-white'}`}>
+                          <button onClick={() => setCurrentAmbience('FIRE')} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'FIRE' ? 'bg-orange-500/20 text-orange-400' : 'text-txt-muted hover:bg-surfaceLight hover:text-txt-main'}`}>
                              <Flame size={14} /> Api Unggun
                           </button>
-                          <button onClick={() => setCurrentAmbience('CAFE')} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'CAFE' ? 'bg-amber-500/20 text-amber-400' : 'text-txt-muted hover:bg-white/5 hover:text-white'}`}>
+                          <button onClick={() => setCurrentAmbience('CAFE')} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'CAFE' ? 'bg-amber-500/20 text-amber-400' : 'text-txt-muted hover:bg-surfaceLight hover:text-txt-main'}`}>
                              <Coffee size={14} /> Kafe
                           </button>
                        </div>
@@ -551,8 +550,8 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
                </div>
                <div className="h-8 w-px bg-line mx-2 hidden md:block"></div>
                <div className={`text-center px-6 py-2 rounded-lg border flex items-center gap-3 ${
-                 isPaused ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400' :
-                 timerStatus.isOvertime ? 'bg-red-500/10 border-red-500/30 text-red-500' : 'bg-surfaceLight border-line text-white'
+                 isPaused ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-500' :
+                 timerStatus.isOvertime ? 'bg-red-500/10 border-red-500/30 text-red-500' : 'bg-surfaceLight border-line text-txt-main'
                }`}>
                   <div className="text-2xl font-mono font-bold tracking-widest leading-none">
                     {timerStatus.isOvertime ? '+' : ''}{formatTime(timerStatus.remaining)}
@@ -560,13 +559,13 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
                </div>
                <div className="h-8 w-px bg-line mx-2 hidden md:block"></div>
                <div className="flex gap-2">
-                 <button onClick={() => setIsPaused(!isPaused)} className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border transition-all ${isPaused ? 'bg-yellow-500 text-black border-yellow-500 hover:bg-yellow-400' : 'bg-surfaceLight border-line text-txt-muted hover:text-white hover:bg-white/10'}`} title={isPaused ? "Lanjutkan" : "Jeda Waktu"}>
+                 <button onClick={() => setIsPaused(!isPaused)} className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border transition-all ${isPaused ? 'bg-yellow-400 text-black border-yellow-400 hover:bg-yellow-300' : 'bg-surfaceLight border-line text-txt-muted hover:text-txt-main hover:bg-white/10'}`} title={isPaused ? "Lanjutkan" : "Jeda Waktu"}>
                     {isPaused ? <Play size={18} fill="currentColor" /> : <Pause size={18} fill="currentColor" />}
                  </button>
-                 <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-surfaceLight border border-line text-txt-muted hover:text-white transition-colors text-sm font-semibold" title="Simpan Catatan sebagai PDF">
+                 <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-surfaceLight border border-line text-txt-muted hover:text-txt-main transition-colors text-sm font-semibold" title="Simpan Catatan sebagai PDF">
                    <Download size={18} />
                  </button>
-                 <button onClick={() => { setIsPaused(false); if (isBreak) { setBreakSessionSeconds(0); setIsBreak(false); } else { setSessionSeconds(0); setIsBreak(true); } }} className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all border ${isBreak ? 'bg-primary text-white border-primary hover:bg-primaryHover' : 'bg-surfaceLight text-txt-muted border-line hover:text-white hover:border-white/30'}`}>
+                 <button onClick={() => { setIsPaused(false); if (isBreak) { setBreakSessionSeconds(0); setIsBreak(false); } else { setSessionSeconds(0); setIsBreak(true); } }} className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all border ${isBreak ? 'bg-primary text-white border-primary hover:bg-primaryHover' : 'bg-surfaceLight text-txt-muted border-line hover:text-txt-main hover:border-txt-muted/30'}`}>
                    {isBreak ? (<><Play size={16} fill="currentColor" /> Lanjut Belajar</>) : (<><Coffee size={16} /> Istirahat</>)}
                  </button>
                  <button onClick={handleFinishReading} className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-5 py-2.5 rounded-lg transition-colors font-bold text-sm shadow-lg shadow-green-900/40">
@@ -582,7 +581,7 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-30 flex flex-col items-center justify-center animate-fade-in">
                  <div className="bg-surface border border-line p-8 rounded-2xl text-center shadow-2xl">
                     <PauseCircle size={64} className="text-yellow-400 mx-auto mb-4" />
-                    <h3 className="text-2xl font-bold text-white mb-2">Sesi Dijeda</h3>
+                    <h3 className="text-2xl font-bold text-txt-main mb-2">Sesi Dijeda</h3>
                     <p className="text-txt-muted mb-6">Waktu berhenti. Ambil nafas sejenak.</p>
                     <button onClick={() => setIsPaused(false)} className="bg-yellow-400 text-black px-6 py-2 rounded-full font-bold hover:bg-yellow-300 transition-colors flex items-center gap-2 mx-auto">
                       <Play size={18} fill="currentColor" /> Lanjutkan
@@ -598,24 +597,26 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
                     <Coffee size={64} className="text-orange-500" />
                   </div>
                 </div>
-                <h3 className="text-4xl font-bold text-white mb-3 tracking-tight">Waktunya Istirahat</h3>
+                <h3 className="text-4xl font-bold text-txt-main mb-3 tracking-tight">Waktunya Istirahat</h3>
                 <div className="text-5xl font-mono font-bold text-orange-400 mb-6">{formatTime(timerStatus.remaining)}</div>
-                <p className="text-green-400 font-medium mb-2 flex items-center gap-2"><Sparkles size={16} /> Istirahat ini juga menambah XP Ruang Anda!</p>
+                <p className="text-green-500 font-medium mb-2 flex items-center gap-2"><Sparkles size={16} /> Istirahat ini juga menambah XP Ruang Anda!</p>
                 <p className="text-txt-muted max-w-md text-lg leading-relaxed mb-8">Jauhkan pandangan dari layar. Regangkan tubuh Anda.</p>
-                <button onClick={() => { setBreakSessionSeconds(0); setIsBreak(false); }} className="bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-all shadow-lg flex items-center gap-2">
+                <button onClick={() => { setBreakSessionSeconds(0); setIsBreak(false); }} className="bg-txt-main text-surface px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all shadow-lg flex items-center gap-2">
                   <PlayCircle size={20} /> Kembali Fokus
                 </button>
               </div>
             )}
             <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-markdown" ref={contentRef}>
-              <article className="prose prose-invert prose-lg max-w-none prose-headings:text-white prose-a:text-primary prose-strong:text-white prose-code:text-accent prose-code:bg-surfaceLight prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surfaceLight prose-pre:border prose-pre:border-line">
+              <article className="prose lg:prose-lg max-w-none dark:prose-invert prose-headings:text-txt-main prose-a:text-primary prose-strong:text-txt-main prose-code:text-accent prose-code:bg-surfaceLight prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surfaceLight prose-pre:border prose-pre:border-line">
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
                     table: ({node, ...props}) => (<div className="overflow-x-auto my-8 border border-line rounded-xl shadow-lg"><table className="w-full text-left border-collapse bg-surfaceLight/20" {...props} /></div>),
                     thead: ({node, ...props}) => <thead className="bg-surfaceLight text-primary" {...props} />,
                     tbody: ({node, ...props}) => <tbody className="divide-y divide-line" {...props} />,
-                    tr: ({node, ...props}) => <tr className="hover:bg-white/5 transition-colors" {...props} />,
-                    th: ({node, ...props}) => <th className="p-4 font-bold text-sm uppercase tracking-wider border-b border-line" {...props} />,
+                    tr: ({node, ...props}) => <tr className="hover:bg-surfaceLight/50 transition-colors" {...props} />,
+                    th: ({node, ...props}) => <th className="p-4 font-bold text-sm uppercase tracking-wider border-b border-line text-txt-main" {...props} />,
                     td: ({node, ...props}) => <td className="p-4 text-sm text-txt-muted border-r border-line last:border-r-0" {...props} />,
+                    p: ({node, ...props}) => <p className="text-txt-main" {...props} />,
+                    li: ({node, ...props}) => <li className="text-txt-main" {...props} />,
                   }}>
                   {notes}
                 </ReactMarkdown>
@@ -627,14 +628,14 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
               </button>
             )}
           </div>
-          {/* Sidebar Chat (Hidden for brevity in this update, assumed present from previous code) */}
+          {/* Sidebar Chat */}
           <div className={`glass-card rounded-xl overflow-hidden flex flex-col transition-all duration-300 border-l border-line ${isChatOpen ? 'w-[400px] opacity-100 translate-x-0' : 'w-0 opacity-0 translate-x-full hidden'}`}>
             <div className="p-4 border-b border-line bg-surface/50 backdrop-blur flex justify-between items-center">
-              <h3 className="font-bold text-white flex items-center gap-2">
+              <h3 className="font-bold text-txt-main flex items-center gap-2">
                 <div className="p-1.5 bg-primary/20 rounded text-primary"><MessageSquare size={16} /></div>
                 Tutor AI
               </h3>
-              <button onClick={() => setIsChatOpen(false)} className="text-txt-dim hover:text-white transition-colors"><X size={18} /></button>
+              <button onClick={() => setIsChatOpen(false)} className="text-txt-dim hover:text-txt-main transition-colors"><X size={18} /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-surface/30">
                {chatHistory.length === 0 && (
@@ -655,7 +656,7 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
             </div>
             <div className="p-4 bg-surface/50 border-t border-line">
               <div className="relative">
-                <input type="text" value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} placeholder="Ketik pertanyaan..." className="w-full bg-surfaceLight border border-line rounded-full pl-5 pr-12 py-3 text-sm focus:ring-1 focus:ring-primary outline-none text-white"/>
+                <input type="text" value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} placeholder="Ketik pertanyaan..." className="w-full bg-surfaceLight border border-line rounded-full pl-5 pr-12 py-3 text-sm focus:ring-1 focus:ring-primary outline-none text-txt-main placeholder-txt-dim"/>
                 <button onClick={handleSendMessage} disabled={!chatMessage.trim() || isChatLoading} className="absolute right-1.5 top-1.5 bg-primary text-white p-1.5 rounded-full hover:bg-primaryHover"><Send size={16} /></button>
               </div>
             </div>
@@ -665,13 +666,13 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
     );
   }
 
-  // QUIZ (Unchanged)
+  // QUIZ (Updated for light mode text)
   if (step === 'QUIZ') {
     const question = generatedQuiz[currentQuestionIdx];
     return (
       <div className="max-w-3xl mx-auto mt-12 animate-fade-in">
         <div className="flex justify-center mb-8">
-           <div className="flex items-center gap-3 text-white bg-surfaceLight border border-line px-5 py-2 rounded-full font-mono font-bold shadow-lg">
+           <div className="flex items-center gap-3 text-txt-main bg-surfaceLight border border-line px-5 py-2 rounded-full font-mono font-bold shadow-lg">
               <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
               {formatTime(elapsedSeconds)}
            </div>
@@ -679,10 +680,10 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
         <div className="glass-card p-10 rounded-2xl relative overflow-hidden">
            <div className="absolute top-0 left-0 w-full h-1 bg-surfaceLight"><div className="h-full bg-primary transition-all duration-500 ease-out" style={{ width: `${((currentQuestionIdx + 1) / generatedQuiz.length) * 100}%` }}/></div>
           <div className="flex justify-between items-center mb-8"><span className="text-xs font-bold text-txt-dim uppercase tracking-widest">Pertanyaan {currentQuestionIdx + 1} / {generatedQuiz.length}</span></div>
-          <h3 className="text-2xl font-bold text-white mb-10 leading-relaxed">{question.question}</h3>
+          <h3 className="text-2xl font-bold text-txt-main mb-10 leading-relaxed">{question.question}</h3>
           <div className="space-y-4">
             {question.options.map((opt, idx) => (
-              <button key={idx} onClick={() => handleAnswer(idx)} className="w-full text-left p-5 rounded-xl border border-line bg-surfaceLight/30 hover:border-primary hover:bg-primary/10 text-txt-muted hover:text-white transition-all flex items-center group relative overflow-hidden">
+              <button key={idx} onClick={() => handleAnswer(idx)} className="w-full text-left p-5 rounded-xl border border-line bg-surfaceLight/30 hover:border-primary hover:bg-primary/10 text-txt-muted hover:text-txt-main transition-all flex items-center group relative overflow-hidden">
                 <span className="w-8 h-8 rounded-lg bg-surfaceLight text-txt-dim flex items-center justify-center mr-5 group-hover:bg-primary group-hover:text-white text-sm font-bold border border-line group-hover:border-primary">{String.fromCharCode(65 + idx)}</span>
                 <span className="text-lg font-medium">{opt}</span>
               </button>
@@ -693,7 +694,7 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
     );
   }
 
-  // RESULT VIEW with REWARD NOTIFICATION
+  // RESULT VIEW
   if (step === 'RESULT') {
     return (
       <div className="max-w-md mx-auto mt-10 text-center animate-fade-in pb-20">
@@ -708,20 +709,20 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
                    </div>
                 </div>
                 <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-1">Item Baru Terbuka!</h3>
-                <h2 className="text-2xl font-bold text-white mb-2">{newReward.name}</h2>
+                <h2 className="text-2xl font-bold text-txt-main mb-2">{newReward.name}</h2>
                 <p className="text-xs text-txt-muted">Cek di "Ruang Saya" sekarang.</p>
              </div>
           </div>
         )}
 
         <div className="glass-card p-12 rounded-3xl shadow-2xl relative overflow-hidden">
-          <h2 className="text-4xl font-bold text-white mb-3">Sesi Selesai!</h2>
+          <h2 className="text-4xl font-bold text-txt-main mb-3">Sesi Selesai!</h2>
           <div className="flex justify-center gap-3 text-sm mb-10">
              <span className="flex items-center gap-1.5 bg-surfaceLight border border-line px-4 py-2 rounded-lg text-txt-main"><Clock size={16} className="text-primary" /> {formatTime(elapsedSeconds)}</span>
              {breakSeconds > 0 && <span className="flex items-center gap-1.5 bg-surfaceLight border border-line px-4 py-2 rounded-lg text-txt-main"><Coffee size={16} className="text-orange-400" /> {formatTime(breakSeconds)}</span>}
           </div>
-          <div className="bg-surfaceLight/50 rounded-2xl p-6 mb-10 border border-line"><p className="text-xs text-txt-dim uppercase tracking-widest font-bold mb-2">Skor Akhir</p><p className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60">{score}%</p></div>
-          <button onClick={() => { setStep('SETUP'); setTopic(''); setLink(''); setFile(null); setNotes(''); setElapsedSeconds(0); setBreakSeconds(0); setIsBreak(false); setNewReward(null); if (onSessionUpdate) onSessionUpdate(null); }} className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-gray-200 transition-colors shadow-lg">Mulai Sesi Baru</button>
+          <div className="bg-surfaceLight/50 rounded-2xl p-6 mb-10 border border-line"><p className="text-xs text-txt-dim uppercase tracking-widest font-bold mb-2">Skor Akhir</p><p className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-txt-main to-txt-muted">{score}%</p></div>
+          <button onClick={() => { setStep('SETUP'); setTopic(''); setLink(''); setFile(null); setNotes(''); setElapsedSeconds(0); setBreakSeconds(0); setIsBreak(false); setNewReward(null); if (onSessionUpdate) onSessionUpdate(null); }} className="w-full bg-txt-main text-surface py-4 rounded-xl font-bold hover:opacity-90 transition-colors shadow-lg">Mulai Sesi Baru</button>
         </div>
       </div>
     );

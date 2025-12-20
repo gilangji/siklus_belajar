@@ -104,7 +104,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
       return (
         <div className="bg-surface border border-line shadow-2xl rounded-lg p-3">
           <p className="text-xs text-txt-muted mb-1">{payload[0].payload.fullDate}</p>
-          <p className="text-sm text-white font-semibold mb-1">{payload[0].payload.topic}</p>
+          <p className="text-sm text-txt-main font-semibold mb-1">{payload[0].payload.topic}</p>
           <div className="flex items-center gap-2">
              <div className="w-2 h-2 rounded-full bg-primary"></div>
              <p className="text-lg font-bold text-primary">
@@ -187,7 +187,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
     <div className="space-y-6 animate-fade-in pb-10">
       <header className="mb-4 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-           <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70 tracking-tight mb-2">
+           <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-txt-main to-txt-muted tracking-tight mb-2">
              Ringkasan Belajar
            </h2>
            <p className="text-txt-muted text-lg">Pantau kemajuan Anda, pertahankan siklus, dan raih penguasaan.</p>
@@ -195,12 +195,12 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
         
         {/* STREAK BADGE */}
         <div className="flex items-center gap-3 bg-surfaceLight/50 border border-line px-5 py-3 rounded-2xl shadow-lg">
-           <div className={`p-2 rounded-full ${streak > 0 ? 'bg-orange-500/20 text-orange-500 animate-pulse' : 'bg-white/5 text-txt-dim'}`}>
+           <div className={`p-2 rounded-full ${streak > 0 ? 'bg-orange-500/20 text-orange-500 animate-pulse' : 'bg-surface/5 text-txt-dim'}`}>
               <Flame size={20} fill={streak > 0 ? "currentColor" : "none"} />
            </div>
            <div>
               <p className="text-xs text-txt-muted font-bold uppercase tracking-wider">Streak</p>
-              <p className="text-xl font-black text-white">{streak} <span className="text-xs font-normal text-txt-dim">Hari</span></p>
+              <p className="text-xl font-black text-txt-main">{streak} <span className="text-xs font-normal text-txt-dim">Hari</span></p>
            </div>
         </div>
       </header>
@@ -210,11 +210,11 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
          {/* Quests Card */}
          <div className="md:col-span-2 glass-card p-6 rounded-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-10">
-               <Target size={100} />
+               <Target size={100} className="text-txt-main" />
             </div>
             
             <div className="flex justify-between items-center mb-6">
-               <h3 className="text-lg font-bold text-white flex items-center gap-2">
+               <h3 className="text-lg font-bold text-txt-main flex items-center gap-2">
                   <Zap size={20} className="text-yellow-400" fill="currentColor" /> Misi Harian
                </h3>
                <span className="text-xs font-bold bg-surfaceLight px-3 py-1 rounded-full border border-line text-txt-muted">
@@ -229,9 +229,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${quest.completed ? 'bg-green-500 border-green-500 text-white' : 'border-line text-transparent'}`}>
                            <CheckCircle2 size={14} />
                         </div>
-                        <span className={`text-sm font-medium ${quest.completed ? 'text-white line-through decoration-white/30' : 'text-txt-muted'}`}>{quest.label}</span>
+                        <span className={`text-sm font-medium ${quest.completed ? 'text-txt-main line-through decoration-txt-muted' : 'text-txt-muted'}`}>{quest.label}</span>
                      </div>
-                     <span className={`text-xs font-bold ${quest.completed ? 'text-green-400' : 'text-txt-dim'}`}>+{quest.xp} XP</span>
+                     <span className={`text-xs font-bold ${quest.completed ? 'text-green-500' : 'text-txt-dim'}`}>+{quest.xp} XP</span>
                   </div>
                ))}
             </div>
@@ -241,7 +241,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
          <div className="glass-card p-6 rounded-2xl flex flex-col justify-between group cursor-pointer hover:border-primary/50 transition-all" onClick={() => lastSession ? onStartStudy(lastSession.topic) : onChangeView(AppView.STUDY_SESSION)}>
             <div>
                <p className="text-xs font-bold text-txt-dim uppercase tracking-wider mb-2">Lanjutkan</p>
-               <h3 className="text-xl font-bold text-white leading-tight mb-1">
+               <h3 className="text-xl font-bold text-txt-main leading-tight mb-1">
                  {lastSession ? lastSession.topic : "Mulai Sesi Baru"}
                </h3>
                {lastSession && <p className="text-xs text-txt-muted">Terakhir: {new Date(lastSession.date).toLocaleDateString('id-ID')}</p>}
@@ -262,13 +262,13 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
           { icon: Trophy, label: "Skor Rata-rata", value: `${Math.round(progress.averageQuizScore)}%`, color: "text-purple-400" },
           { icon: Target, label: "Level", value: progress.topicsLearned > 20 ? 'Mahir' : progress.topicsLearned > 10 ? 'Menengah' : 'Pemula', color: "text-orange-400" }
         ].map((stat, idx) => (
-          <div key={idx} className="glass-card p-6 rounded-xl flex items-center space-x-4 hover:bg-white/5 transition-all duration-300 hover:scale-[1.03] hover:border-white/20">
+          <div key={idx} className="glass-card p-6 rounded-xl flex items-center space-x-4 hover:bg-surfaceLight/30 transition-all duration-300 hover:scale-[1.03] hover:border-txt-muted/20">
             <div className={`p-3 rounded-lg bg-surfaceLight border border-line ${stat.color}`}>
               <stat.icon size={22} />
             </div>
             <div>
               <p className="text-xs text-txt-muted uppercase tracking-wider font-semibold">{stat.label}</p>
-              <p className="text-xl font-bold text-white mt-0.5">{stat.value}</p>
+              <p className="text-xl font-bold text-txt-main mt-0.5">{stat.value}</p>
             </div>
           </div>
         ))}
@@ -277,8 +277,8 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Chart 1: Time per Topic */}
-        <div className="glass-card p-6 rounded-xl flex flex-col h-[400px] transition-all duration-300 hover:scale-[1.03] hover:bg-white/5 hover:border-white/20">
-          <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+        <div className="glass-card p-6 rounded-xl flex flex-col h-[400px] transition-all duration-300 hover:scale-[1.03] hover:bg-surfaceLight/10 hover:border-txt-muted/20">
+          <h3 className="text-lg font-semibold text-txt-main mb-2 flex items-center gap-2">
             <PieChart size={18} className="text-primary" /> Distribusi Fokus
           </h3>
           <p className="text-xs text-txt-muted mb-6">Alokasi waktu belajar per topik.</p>
@@ -286,7 +286,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
             {topicData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topicData} layout="vertical" margin={{ left: 10, right: 10 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1e293b" />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--color-line)" />
                   <XAxis type="number" hide />
                   <YAxis 
                     dataKey="name" 
@@ -294,11 +294,11 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
                     axisLine={false} 
                     tickLine={false} 
                     width={100}
-                    tick={{fill: '#94a3b8', fontSize: 11, fontWeight: 500}} 
+                    tick={{fill: 'var(--color-txt-muted)', fontSize: 11, fontWeight: 500}} 
                   />
                   <Tooltip 
-                    cursor={{fill: 'rgba(255,255,255,0.05)'}}
-                    contentStyle={{ backgroundColor: '#0B0F17', borderRadius: '8px', border: '1px solid #1f2937', color: '#f8fafc' }}
+                    cursor={{fill: 'var(--color-surface-light)'}}
+                    contentStyle={{ backgroundColor: 'var(--color-surface)', borderRadius: '8px', border: '1px solid var(--color-line)', color: 'var(--color-txt-main)' }}
                   />
                   <Bar dataKey="minutes" radius={[0, 4, 4, 0]} barSize={20} name="Total Menit">
                     {topicData.map((entry, index) => (
@@ -316,8 +316,8 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
         </div>
 
         {/* Chart 2: Score Trend */}
-        <div className="glass-card p-6 rounded-xl flex flex-col h-[400px] transition-all duration-300 hover:scale-[1.03] hover:bg-white/5 hover:border-white/20">
-          <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+        <div className="glass-card p-6 rounded-xl flex flex-col h-[400px] transition-all duration-300 hover:scale-[1.03] hover:bg-surfaceLight/10 hover:border-txt-muted/20">
+          <h3 className="text-lg font-semibold text-txt-main mb-2 flex items-center gap-2">
             <TrendingUp size={18} className="text-accent" /> Performa
           </h3>
           <p className="text-xs text-txt-muted mb-6">Tren nilai kuis dari waktu ke waktu.</p>
@@ -331,19 +331,19 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
                       <stop offset="95%" stopColor="#5c65e6" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-line)" />
                   <XAxis 
                     dataKey="date" 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{fill: '#64748b', fontSize: 10}} 
+                    tick={{fill: 'var(--color-txt-muted)', fontSize: 10}} 
                     dy={10}
                   />
                   <YAxis 
                     domain={[0, 100]} 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{fill: '#64748b', fontSize: 10}} 
+                    tick={{fill: 'var(--color-txt-muted)', fontSize: 10}} 
                   />
                   <Tooltip content={<CustomLineTooltip />} />
                   <Line 
@@ -351,7 +351,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
                     dataKey="score" 
                     stroke="#5c65e6" 
                     strokeWidth={3} 
-                    dot={{fill: '#030508', stroke: '#5c65e6', strokeWidth: 2, r: 4}} 
+                    dot={{fill: 'var(--color-surface)', stroke: '#5c65e6', strokeWidth: 2, r: 4}} 
                     activeDot={{r: 6, fill: '#818cf8', stroke: '#fff', strokeWidth: 2}}
                     name="Skor"
                     animationDuration={1500}
@@ -368,9 +368,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
       </div>
 
       {/* Recent Sessions List (Interactive History) */}
-      <div className="glass-card rounded-xl overflow-hidden transition-all duration-300 hover:border-white/20 hover:shadow-2xl">
+      <div className="glass-card rounded-xl overflow-hidden transition-all duration-300 hover:border-txt-muted/20 hover:shadow-2xl">
         <div className="p-6 border-b border-line flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-white">Riwayat Belajar</h3>
+          <h3 className="text-lg font-semibold text-txt-main">Riwayat Belajar</h3>
           <span className="text-xs text-txt-muted bg-surfaceLight px-2 py-1 rounded">Klik baris untuk detail</span>
         </div>
         <div className="overflow-x-auto">
@@ -389,9 +389,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
                 <tr 
                   key={session.id} 
                   onClick={() => setSelectedSession(session)}
-                  className="hover:bg-white/5 transition-colors cursor-pointer group"
+                  className="hover:bg-surfaceLight/30 transition-colors cursor-pointer group"
                 >
-                  <td className="py-4 px-6 text-white font-medium">
+                  <td className="py-4 px-6 text-txt-main font-medium">
                     <div className="flex items-center gap-2">
                        <FileText size={16} className="text-primary/60" />
                        {session.topic}
@@ -403,8 +403,8 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
                   <td className="py-4 px-6">
                     {session.quizScore !== undefined ? (
                       <span className={`px-2.5 py-1 rounded text-xs font-bold ${
-                        (session.quizScore || 0) >= 80 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
-                        (session.quizScore || 0) >= 60 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                        (session.quizScore || 0) >= 80 ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
+                        (session.quizScore || 0) >= 60 ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
                       }`}>
                         {session.quizScore}%
                       </span>
@@ -442,7 +442,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
              {/* Header */}
              <div className="flex justify-between items-start p-6 border-b border-line bg-surfaceLight/30 shrink-0">
                <div>
-                 <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                 <h3 className="text-2xl font-bold text-txt-main flex items-center gap-2">
                    <FileText className="text-primary" size={24} />
                    Detail Sesi: {selectedSession.topic}
                  </h3>
@@ -453,7 +453,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
                </div>
                <button 
                  onClick={() => setSelectedSession(null)}
-                 className="p-2 bg-surfaceLight hover:bg-white/10 rounded-full text-txt-muted hover:text-white transition-colors"
+                 className="p-2 bg-surfaceLight hover:bg-surfaceLight/80 rounded-full text-txt-muted hover:text-txt-main transition-colors"
                >
                  <X size={20} />
                </button>
@@ -466,21 +466,21 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
                    <div className="flex-1 bg-surfaceLight/50 p-4 rounded-xl border border-line">
                       <p className="text-xs uppercase text-txt-dim font-bold mb-1">Skor Kuis</p>
                       <p className={`text-3xl font-bold ${
-                        (selectedSession.quizScore || 0) >= 80 ? 'text-green-400' : 
-                        (selectedSession.quizScore || 0) >= 60 ? 'text-amber-400' : 'text-red-400'
+                        (selectedSession.quizScore || 0) >= 80 ? 'text-green-500' : 
+                        (selectedSession.quizScore || 0) >= 60 ? 'text-amber-500' : 'text-red-500'
                       }`}>
                         {selectedSession.quizScore || 0}%
                       </p>
                    </div>
                    <div className="flex-1 bg-surfaceLight/50 p-4 rounded-xl border border-line">
                       <p className="text-xs uppercase text-txt-dim font-bold mb-1">Status</p>
-                      <p className="text-3xl font-bold text-white">Selesai</p>
+                      <p className="text-3xl font-bold text-txt-main">Selesai</p>
                    </div>
                 </div>
 
                 <div className="mb-6">
-                  <h4 className="text-lg font-bold text-white mb-4 border-b border-line pb-2">Catatan Pembelajaran (Arsip)</h4>
-                  <article className="prose prose-invert prose-sm max-w-none text-txt-muted">
+                  <h4 className="text-lg font-bold text-txt-main mb-4 border-b border-line pb-2">Catatan Pembelajaran (Arsip)</h4>
+                  <article className="prose dark:prose-invert prose-lg max-w-none text-txt-muted">
                      <ReactMarkdown 
                         remarkPlugins={[remarkGfm]}
                         components={{
@@ -491,9 +491,13 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
                           ),
                           thead: ({node, ...props}) => <thead className="bg-surfaceLight" {...props} />,
                           tbody: ({node, ...props}) => <tbody className="divide-y divide-line" {...props} />,
-                          tr: ({node, ...props}) => <tr className="hover:bg-white/5" {...props} />,
+                          tr: ({node, ...props}) => <tr className="hover:bg-surfaceLight/50" {...props} />,
                           th: ({node, ...props}) => <th className="p-3 font-bold text-xs uppercase text-primary border-b border-line" {...props} />,
                           td: ({node, ...props}) => <td className="p-3 text-sm text-txt-muted border-r border-line last:border-r-0" {...props} />,
+                          h1: ({node, ...props}) => <h1 className="text-txt-main" {...props} />,
+                          h2: ({node, ...props}) => <h2 className="text-txt-main" {...props} />,
+                          h3: ({node, ...props}) => <h3 className="text-txt-main" {...props} />,
+                          strong: ({node, ...props}) => <strong className="text-txt-main" {...props} />,
                         }}
                      >
                        {selectedSession.notes}
@@ -507,7 +511,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
                <div>
                   <button 
                     onClick={() => handleDownloadPDF(selectedSession)}
-                    className="px-4 py-2.5 rounded-xl border border-line text-txt-muted hover:text-white hover:bg-white/5 font-semibold transition-all flex items-center gap-2 text-sm"
+                    className="px-4 py-2.5 rounded-xl border border-line text-txt-muted hover:text-txt-main hover:bg-surfaceLight font-semibold transition-all flex items-center gap-2 text-sm"
                   >
                     <Download size={16} />
                     Unduh PDF
@@ -517,7 +521,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
                <div className="flex gap-3">
                   <button 
                     onClick={() => setSelectedSession(null)}
-                    className="px-5 py-2.5 rounded-xl border border-line text-txt-muted hover:text-white hover:bg-white/5 font-semibold transition-all"
+                    className="px-5 py-2.5 rounded-xl border border-line text-txt-muted hover:text-txt-main hover:bg-surfaceLight font-semibold transition-all"
                   >
                     Tutup
                   </button>

@@ -71,7 +71,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
   if (mode === 'SELECT') {
     return (
       <div className="max-w-3xl mx-auto p-4 animate-fade-in mt-10">
-        <h2 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
+        <h2 className="text-4xl font-bold text-txt-main mb-2 flex items-center gap-3">
           <div className="p-2.5 bg-primary/20 rounded-xl text-primary"><BrainCircuit size={32} /></div>
           Pusat Latihan
         </h2>
@@ -89,7 +89,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="cth: Bias Kognitif"
-                className="w-full p-4 bg-surfaceLight border border-line rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-white placeholder-txt-dim text-lg transition-all shadow-inner"
+                className="w-full p-4 bg-surfaceLight border border-line rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-txt-main placeholder-txt-dim text-lg transition-all shadow-inner"
               />
               {previousTopics.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -98,7 +98,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
                     <button 
                       key={i} 
                       onClick={() => setTopic(t)}
-                      className="text-xs bg-surfaceLight hover:bg-white/10 text-txt-muted hover:text-white px-3 py-1 rounded-full transition border border-line hover:scale-105"
+                      className="text-xs bg-surfaceLight hover:bg-surfaceLight/80 text-txt-muted hover:text-txt-main px-3 py-1 rounded-full transition border border-line hover:scale-105"
                     >
                       {t}
                     </button>
@@ -114,13 +114,13 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
                   <FileText size={20} />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-base font-bold text-white">Catatan Belajar Ditemukan</h4>
+                  <h4 className="text-base font-bold text-txt-main">Catatan Belajar Ditemukan</h4>
                   <p className="text-sm text-txt-muted mt-1 leading-relaxed">
-                    Sistem menemukan catatan dari sesi <span className="text-white font-medium">{new Date(matchedSession.date).toLocaleDateString('id-ID')}</span>. Centang di bawah untuk menggunakan materi ini sebagai basis kuis.
+                    Sistem menemukan catatan dari sesi <span className="text-txt-main font-medium">{new Date(matchedSession.date).toLocaleDateString('id-ID')}</span>. Centang di bawah untuk menggunakan materi ini sebagai basis kuis.
                   </p>
                   
                   <label className="flex items-center gap-3 mt-4 cursor-pointer group">
-                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${usePersonalNotes ? 'bg-primary border-primary' : 'bg-surfaceLight border-line group-hover:border-white/40'}`}>
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${usePersonalNotes ? 'bg-primary border-primary' : 'bg-surfaceLight border-line group-hover:border-txt-dim'}`}>
                       {usePersonalNotes && <Check size={14} className="text-white" />}
                     </div>
                     <input 
@@ -129,7 +129,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
                       onChange={(e) => setUsePersonalNotes(e.target.checked)}
                       className="hidden"
                     />
-                    <span className="text-sm font-medium text-white group-hover:text-primary transition-colors">Personalisasi materi latihan</span>
+                    <span className="text-sm font-medium text-txt-main group-hover:text-primary transition-colors">Personalisasi materi latihan</span>
                   </label>
                 </div>
               </div>
@@ -146,7 +146,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
                    <div className="w-12 h-12 rounded-lg bg-surfaceLight border border-line flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-txt-muted group-hover:text-primary">
                       <Layers size={24} />
                    </div>
-                   <span className="block text-lg font-bold text-white mb-1 group-hover:text-primary transition-colors">Flashcards</span>
+                   <span className="block text-lg font-bold text-txt-main mb-1 group-hover:text-primary transition-colors">Flashcards</span>
                    <span className="text-sm text-txt-muted">Metode repetisi untuk menghafal istilah kunci.</span>
                 </div>
               </button>
@@ -166,7 +166,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
                    <div className="w-12 h-12 rounded-lg bg-surfaceLight border border-line flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-txt-muted group-hover:text-accent">
                       <Check size={24} />
                    </div>
-                   <span className="block text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors">Kuis Latihan</span>
+                   <span className="block text-lg font-bold text-txt-main mb-1 group-hover:text-accent transition-colors">Kuis Latihan</span>
                    <span className="text-sm text-txt-muted">
                       {usePersonalNotes && matchedSession ? 'Soal spesifik dari catatan Anda.' : 'Uji logika dan pemahaman umum.'}
                    </span>
@@ -190,7 +190,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
     return (
       <div className="max-w-2xl mx-auto mt-10 animate-fade-in flex flex-col h-[600px]">
         <div className="flex justify-between items-center mb-6">
-          <button onClick={() => setMode('SELECT')} className="text-txt-muted hover:text-white text-sm flex items-center gap-1 transition-colors">
+          <button onClick={() => setMode('SELECT')} className="text-txt-muted hover:text-txt-main text-sm flex items-center gap-1 transition-colors">
              <ChevronLeft size={16} /> Kembali
           </button>
           <span className="bg-surfaceLight px-3 py-1 rounded-full text-xs font-mono text-txt-dim border border-line">{currentCardIndex + 1} / {flashcards.length}</span>
@@ -202,7 +202,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
             {/* Front */}
             <div className="absolute w-full h-full backface-hidden glass-card rounded-3xl flex flex-col items-center justify-center p-12 text-center border border-line/50 hover:border-primary/30 transition-colors shadow-2xl">
               <span className="text-xs uppercase tracking-widest text-txt-dim mb-6 font-bold border border-line px-2 py-1 rounded">Pertanyaan</span>
-              <h3 className="text-3xl font-bold text-white leading-relaxed">{card.front}</h3>
+              <h3 className="text-3xl font-bold text-txt-main leading-relaxed">{card.front}</h3>
               <p className="mt-12 text-primary text-sm flex items-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
                 <RotateCw size={14} /> Klik kartu untuk melihat jawaban
               </p>
@@ -246,7 +246,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
                  setMode('SELECT'); // Done
                }
              }}
-             className="px-8 py-3 rounded-full bg-white text-black hover:bg-gray-200 font-bold transition-all shadow-lg shadow-white/10 hover:scale-[1.03]"
+             className="px-8 py-3 rounded-full bg-txt-main text-surface hover:opacity-90 font-bold transition-all shadow-lg hover:scale-[1.03]"
            >
              {currentCardIndex < flashcards.length - 1 ? 'Berikutnya' : 'Selesai'}
            </button>
@@ -260,13 +260,13 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
        return (
         <div className="max-w-md mx-auto mt-20 text-center glass-card p-10 rounded-3xl shadow-2xl border border-line relative overflow-hidden">
            <div className="absolute inset-0 bg-primary/5"></div>
-           <h2 className="text-3xl font-bold text-white mb-2 relative z-10">Hasil Kuis</h2>
+           <h2 className="text-3xl font-bold text-txt-main mb-2 relative z-10">Hasil Kuis</h2>
            <div className="my-8 relative z-10">
-              <span className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50">{Math.round((score / quizQuestions.length) * 100)}</span>
+              <span className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-txt-main to-txt-muted">{Math.round((score / quizQuestions.length) * 100)}</span>
               <span className="text-2xl text-txt-dim">%</span>
            </div>
-           <p className="text-txt-muted mb-8 relative z-10">Anda menjawab <strong className="text-white">{score}</strong> dari {quizQuestions.length} pertanyaan dengan benar.</p>
-           <button onClick={() => setMode('SELECT')} className="px-8 py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors relative z-10 w-full hover:scale-[1.03]">Kembali ke Menu</button>
+           <p className="text-txt-muted mb-8 relative z-10">Anda menjawab <strong className="text-txt-main">{score}</strong> dari {quizQuestions.length} pertanyaan dengan benar.</p>
+           <button onClick={() => setMode('SELECT')} className="px-8 py-3 bg-txt-main text-surface font-bold rounded-lg hover:opacity-90 transition-colors relative z-10 w-full hover:scale-[1.03]">Kembali ke Menu</button>
         </div>
        );
     }
@@ -275,7 +275,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
     return (
       <div className="max-w-2xl mx-auto mt-12 animate-fade-in">
         <div className="flex justify-between items-center mb-8">
-          <button onClick={() => setMode('SELECT')} className="text-txt-muted text-sm hover:text-white transition-colors flex items-center gap-1">
+          <button onClick={() => setMode('SELECT')} className="text-txt-muted text-sm hover:text-txt-main transition-colors flex items-center gap-1">
              <X size={16} /> Keluar
           </button>
           <span className="bg-surfaceLight px-4 py-1.5 rounded-full text-xs font-bold border border-line text-txt-muted">
@@ -284,7 +284,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
         </div>
 
         <div className="glass-card p-10 rounded-2xl shadow-xl border border-line relative">
-          <h3 className="text-xl font-bold text-white mb-8 leading-relaxed">{question.question}</h3>
+          <h3 className="text-xl font-bold text-txt-main mb-8 leading-relaxed">{question.question}</h3>
           <div className="space-y-3">
             {question.options.map((opt, idx) => (
                <button
@@ -297,7 +297,7 @@ const ReviewCenter: React.FC<ReviewCenterProps> = ({ initialTopic, sessions }) =
                       setQuizComplete(true);
                     }
                  }}
-                 className="w-full text-left p-5 rounded-xl border border-line bg-surfaceLight/30 hover:border-primary hover:bg-primary/10 text-txt-muted hover:text-white transition-all group hover:scale-[1.01] transform"
+                 className="w-full text-left p-5 rounded-xl border border-line bg-surfaceLight/30 hover:border-primary hover:bg-primary/10 text-txt-muted hover:text-txt-main transition-all group hover:scale-[1.01] transform"
                >
                  <div className="flex items-center gap-4">
                     <span className="w-6 h-6 rounded flex items-center justify-center border border-line text-xs font-bold text-txt-dim group-hover:border-primary group-hover:text-primary transition-colors">
