@@ -35,37 +35,22 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
   const completedQuestsCount = quests.filter(q => q.completed).length;
 
   // --- Calculate Streak (Simple Logic) ---
-  // In a real app, this should be better handled by backend, but we can infer from session dates.
   const calculateStreak = () => {
     if (sessions.length === 0) return 0;
-    
-    // Get unique dates sorted descending
     const uniqueDates = Array.from(new Set(sessions.map(s => s.date.split('T')[0]))).sort().reverse();
-    
-    // Check if studied today
     const hasStudiedToday = uniqueDates[0] === today;
     let streak = hasStudiedToday ? 1 : 0;
-    let currentCheckDate = new Date(hasStudiedToday ? today : new Date().setDate(new Date().getDate() - 1));
-
-    // Iterate backwards
-    // Note: This logic is simplified for frontend-only demo. 
-    // It assumes consecutive days in the 'uniqueDates' array means a streak.
-    // A robust implementation needs loop checking date differences.
     
     let tempStreak = 0;
     let lastDate = new Date(); // Start from today
     
-    // Check backwards from today/yesterday
-    for (let i = 0; i < 30; i++) { // Check last 30 days max
+    for (let i = 0; i < 30; i++) { 
        const dateStr = lastDate.toISOString().split('T')[0];
        if (uniqueDates.includes(dateStr)) {
          tempStreak++;
-         lastDate.setDate(lastDate.getDate() - 1); // Go to previous day
+         lastDate.setDate(lastDate.getDate() - 1); 
        } else {
-         // If we miss today (and it's not today yet in user time maybe), allows 1 day gap if we just started checking? 
-         // Simplification: Streak breaks if date missing.
          if (i === 0 && !uniqueDates.includes(today)) {
-            // If today is missing, check if yesterday exists
             lastDate.setDate(lastDate.getDate() - 1);
             continue; 
          }
@@ -135,34 +120,28 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
   const handleDownloadPDF = (session: StudySession) => {
     if (!noteContentRef.current) return;
     
-    // 1. CLONE
     const originalElement = noteContentRef.current;
     const clone = originalElement.cloneNode(true) as HTMLElement;
 
-    // 2. STYLE FOR PRINT (White bg, Black Text)
     clone.style.backgroundColor = '#ffffff';
     clone.style.color = '#000000';
     clone.style.padding = '40px';
     clone.style.width = '100%';
 
-    // Modify Typography classes on the clone
     const article = clone.querySelector('article');
     if (article) {
-      article.classList.remove('prose-invert'); // Remove dark mode inversion
-      article.classList.add('prose-slate'); // Use standard slate colors
+      article.classList.remove('prose-invert'); 
+      article.classList.add('prose-slate'); 
       
-      // Remove hardcoded white text classes
       article.classList.remove('prose-headings:text-white');
       article.classList.remove('prose-strong:text-white');
       article.classList.remove('text-txt-muted');
       
-      // Add hardcoded black/dark text classes
       article.classList.add('prose-headings:text-black');
       article.classList.add('prose-strong:text-black');
       article.style.color = '#000000';
     }
 
-    // Fix Tables
     const tables = clone.querySelectorAll('table');
     tables.forEach((t) => {
        if (t instanceof HTMLElement) {
@@ -187,7 +166,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
        }
     });
 
-    // 3. GENERATE
     const opt = {
       margin: 15,
       filename: `Riwayat_Belajar_${session.topic.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
@@ -415,6 +393,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
                 >
                   <td className="py-4 px-6 text-white font-medium">
                     <div className="flex items-center gap-2">
+                       <FileText size={16} className="text-primary/60" />
                        {session.topic}
                        {session.referenceLink && <span className="text-[10px] text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded ml-2">LINK</span>}
                     </div>

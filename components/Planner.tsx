@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StudyModule } from '../types';
 import { generateSyllabus } from '../services/geminiService';
-import { CheckCircle2, Circle, Loader2, Sparkles, AlertCircle, Settings2, X, GraduationCap, ArrowRight, Check } from 'lucide-react';
+import { CheckCircle2, Circle, Loader2, Sparkles, AlertCircle, Settings2, X, GraduationCap, ArrowRight, Check, History, Library, FlaskConical, Rocket } from 'lucide-react';
 
 interface PlannerProps {
   modules: StudyModule[];
@@ -76,6 +76,17 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy, co
     const updated = modules.map(m => m.id === id ? { ...m, completed: !m.completed } : m);
     // Pass 'false' because we are just updating status, not replacing the whole plan
     setModules(updated, false);
+  };
+
+  // Helper to get icon based on phase/week
+  const getPhaseIcon = (week: number) => {
+    switch(week) {
+      case 1: return <History size={24} className="text-indigo-500" />;
+      case 2: return <Library size={24} className="text-emerald-500" />;
+      case 3: return <FlaskConical size={24} className="text-amber-500" />;
+      case 4: return <Rocket size={24} className="text-rose-500" />;
+      default: return <Sparkles size={24} className="text-primary" />;
+    }
   };
 
   return (
@@ -206,8 +217,9 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy, co
         {modules.map((module, idx) => (
           <div 
             key={module.id} 
-            className={`glass-card rounded-xl transition-all duration-300 group ${
-              module.completed ? 'opacity-70 grayscale-[0.5]' : 'hover:border-primary/50 hover:scale-[1.03]'
+            // USING REQUESTED SELECTOR STYLE: bg-white light card
+            className={`bg-white rounded-xl shadow-sm border border-gray-100 transition-all duration-300 group ${
+              module.completed ? 'opacity-70 grayscale-[0.5]' : 'hover:shadow-md hover:scale-[1.03]'
             }`}
           >
             <div className="p-6 md:p-8">
@@ -215,21 +227,30 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy, co
                 <div className="flex gap-6">
                   {/* Phase Indicator */}
                   <div className="flex flex-col items-center gap-2 pt-1">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-txt-dim">Fase</span>
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold border ${module.completed ? 'bg-green-900/20 border-green-500/30 text-green-500' : 'bg-surfaceLight border-line text-white group-hover:border-primary group-hover:text-primary'} transition-colors`}>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Fase</span>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold border transition-colors ${
+                      module.completed 
+                        ? 'bg-green-100 border-green-200 text-green-600' 
+                        : 'bg-slate-50 border-slate-200 text-slate-700 group-hover:border-indigo-200 group-hover:text-indigo-600'
+                    }`}>
                       {module.week}
                     </div>
-                    <div className={`w-px h-full ${idx === modules.length - 1 ? 'bg-transparent' : 'bg-line'} my-2`}></div>
+                    <div className={`w-px h-full ${idx === modules.length - 1 ? 'bg-transparent' : 'bg-slate-200'} my-2`}></div>
                   </div>
                   
                   {/* Content */}
                   <div>
-                    <h3 className={`text-2xl font-bold ${module.completed ? 'text-txt-muted line-through decoration-line' : 'text-white'} mb-2`}>{module.title}</h3>
-                    <p className="text-txt-muted text-sm leading-relaxed max-w-2xl">{module.description}</p>
+                    {/* Updated Title with Icon and Dark Text */}
+                    <h3 className={`text-2xl font-bold flex items-center gap-3 ${module.completed ? 'text-slate-400 line-through' : 'text-slate-900'} mb-2`}>
+                      <span className="shrink-0 mt-1">{getPhaseIcon(module.week)}</span>
+                      {module.title}
+                    </h3>
                     
-                    <div className="mt-6 pt-6 border-t border-line w-full">
-                      <h4 className="text-xs font-bold text-txt-dim mb-3 uppercase tracking-widest flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                    <p className="text-slate-600 text-sm leading-relaxed max-w-2xl">{module.description}</p>
+                    
+                    <div className="mt-6 pt-6 border-t border-slate-100 w-full">
+                      <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-widest flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
                         Topik Fokus
                       </h4>
                       <div className="flex flex-wrap gap-2.5">
@@ -242,12 +263,12 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy, co
                               className={`
                                 relative border px-4 py-2 rounded-lg text-sm transition-all cursor-pointer font-medium hover:scale-105 transform duration-150 flex items-center gap-2
                                 ${isCompleted 
-                                  ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20' 
-                                  : 'bg-surfaceLight border-line text-txt-muted hover:bg-primary hover:text-white hover:border-primary/50'
+                                  ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100' 
+                                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200'
                                 }
                               `}
                             >
-                              {isCompleted && <Check size={14} className="text-green-500" />}
+                              {isCompleted && <Check size={14} className="text-green-600" />}
                               {topic}
                             </button>
                           );
@@ -259,11 +280,11 @@ const Planner: React.FC<PlannerProps> = ({ modules, setModules, onStartStudy, co
                 
                 <button 
                   onClick={() => toggleModuleCompletion(module.id)}
-                  className={`transition-all duration-300 p-2 rounded-full hover:bg-white/5 ${module.completed ? 'text-green-500' : 'text-txt-dim hover:text-white'}`}
+                  className={`transition-all duration-300 p-2 rounded-full hover:bg-slate-100 ${module.completed ? 'text-green-500' : 'text-slate-300 hover:text-indigo-500'}`}
                   title={module.completed ? "Tandai belum selesai" : "Tandai selesai"}
                 >
                   {module.completed ? (
-                    <CheckCircle2 size={32} fill="currentColor" className="bg-void rounded-full" />
+                    <CheckCircle2 size={32} fill="currentColor" className="bg-white rounded-full" />
                   ) : (
                     <Circle size={32} />
                   )}
