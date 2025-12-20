@@ -121,6 +121,7 @@ const App: React.FC = () => {
 
   const handleSaveSession = async (newSession: StudySession) => {
     setSessions(prev => {
+      // Check if session exists to update it, otherwise add new
       const exists = prev.find(s => s.id === newSession.id);
       if (exists) {
         return prev.map(s => s.id === newSession.id ? newSession : s);
