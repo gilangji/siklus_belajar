@@ -499,12 +499,17 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
   if (step === 'LEARNING') {
       return (
       <div className="max-w-7xl mx-auto h-[calc(100vh-140px)] flex flex-col animate-fade-in">
-        <div className="mb-4 glass-card rounded-xl overflow-hidden flex flex-col relative">
-          <div className="absolute top-0 left-0 w-full h-1 bg-surfaceLight"></div>
-          <div 
-            className={`absolute top-0 left-0 h-1 transition-all duration-1000 ease-linear ${isBreak ? 'bg-orange-500' : isPaused ? 'bg-yellow-500' : 'bg-primary'}`}
-            style={{ width: `${timerStatus.progress}%` }}
-          ></div>
+        {/* MODIFIED: Removed overflow-hidden from the card container to allow dropdowns to be visible */}
+        <div className="mb-4 glass-card rounded-xl flex flex-col relative">
+          {/* Progress Bar Container: Wrapped in its own overflow-hidden container to maintain rounded corner masking */}
+          <div className="absolute top-0 left-0 w-full h-1 rounded-t-xl overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-1 bg-surfaceLight"></div>
+             <div 
+               className={`absolute top-0 left-0 h-1 transition-all duration-1000 ease-linear ${isBreak ? 'bg-orange-500' : isPaused ? 'bg-yellow-500' : 'bg-primary'}`}
+               style={{ width: `${timerStatus.progress}%` }}
+             ></div>
+          </div>
+
           <div className="p-4 flex flex-col md:flex-row justify-between items-center gap-4 relative z-10">
             <div className="flex items-center gap-4 w-full md:w-auto overflow-hidden">
                <div className={`p-2 rounded-lg flex-shrink-0 ${isBreak ? 'bg-orange-500/10 text-orange-500' : 'bg-primary/10 text-primary'}`}>
@@ -532,16 +537,16 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
                     <div className="absolute top-full right-0 mt-2 w-48 bg-surface border border-line rounded-xl shadow-2xl p-2 z-50 animate-fade-in">
                        <p className="text-[10px] text-txt-dim font-bold uppercase tracking-wider mb-2 px-2">Suara Latar</p>
                        <div className="space-y-1">
-                          <button onClick={() => setCurrentAmbience('NONE')} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'NONE' ? 'bg-surfaceLight text-txt-main' : 'text-txt-muted hover:bg-surfaceLight hover:text-txt-main'}`}>
+                          <button onClick={() => { setCurrentAmbience('NONE'); setShowAmbienceMenu(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'NONE' ? 'bg-surfaceLight text-txt-main' : 'text-txt-muted hover:bg-surfaceLight hover:text-txt-main'}`}>
                              <VolumeX size={14} /> Hening
                           </button>
-                          <button onClick={() => setCurrentAmbience('RAIN')} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'RAIN' ? 'bg-primary/20 text-primary' : 'text-txt-muted hover:bg-surfaceLight hover:text-txt-main'}`}>
+                          <button onClick={() => { setCurrentAmbience('RAIN'); setShowAmbienceMenu(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'RAIN' ? 'bg-primary/20 text-primary' : 'text-txt-muted hover:bg-surfaceLight hover:text-txt-main'}`}>
                              <CloudRain size={14} /> Hujan
                           </button>
-                          <button onClick={() => setCurrentAmbience('FIRE')} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'FIRE' ? 'bg-orange-500/20 text-orange-400' : 'text-txt-muted hover:bg-surfaceLight hover:text-txt-main'}`}>
+                          <button onClick={() => { setCurrentAmbience('FIRE'); setShowAmbienceMenu(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'FIRE' ? 'bg-orange-500/20 text-orange-400' : 'text-txt-muted hover:bg-surfaceLight hover:text-txt-main'}`}>
                              <Flame size={14} /> Api Unggun
                           </button>
-                          <button onClick={() => setCurrentAmbience('CAFE')} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'CAFE' ? 'bg-amber-500/20 text-amber-400' : 'text-txt-muted hover:bg-surfaceLight hover:text-txt-main'}`}>
+                          <button onClick={() => { setCurrentAmbience('CAFE'); setShowAmbienceMenu(false); }} className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${currentAmbience === 'CAFE' ? 'bg-amber-500/20 text-amber-400' : 'text-txt-muted hover:bg-surfaceLight hover:text-txt-main'}`}>
                              <Coffee size={14} /> Kafe
                           </button>
                        </div>
@@ -661,68 +666,6 @@ const StudySessionView: React.FC<StudySessionViewProps> = ({ initialTopic, onSav
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  // QUIZ (Updated for light mode text)
-  if (step === 'QUIZ') {
-    const question = generatedQuiz[currentQuestionIdx];
-    return (
-      <div className="max-w-3xl mx-auto mt-12 animate-fade-in">
-        <div className="flex justify-center mb-8">
-           <div className="flex items-center gap-3 text-txt-main bg-surfaceLight border border-line px-5 py-2 rounded-full font-mono font-bold shadow-lg">
-              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-              {formatTime(elapsedSeconds)}
-           </div>
-        </div>
-        <div className="glass-card p-10 rounded-2xl relative overflow-hidden">
-           <div className="absolute top-0 left-0 w-full h-1 bg-surfaceLight"><div className="h-full bg-primary transition-all duration-500 ease-out" style={{ width: `${((currentQuestionIdx + 1) / generatedQuiz.length) * 100}%` }}/></div>
-          <div className="flex justify-between items-center mb-8"><span className="text-xs font-bold text-txt-dim uppercase tracking-widest">Pertanyaan {currentQuestionIdx + 1} / {generatedQuiz.length}</span></div>
-          <h3 className="text-2xl font-bold text-txt-main mb-10 leading-relaxed">{question.question}</h3>
-          <div className="space-y-4">
-            {question.options.map((opt, idx) => (
-              <button key={idx} onClick={() => handleAnswer(idx)} className="w-full text-left p-5 rounded-xl border border-line bg-surfaceLight/30 hover:border-primary hover:bg-primary/10 text-txt-muted hover:text-txt-main transition-all flex items-center group relative overflow-hidden">
-                <span className="w-8 h-8 rounded-lg bg-surfaceLight text-txt-dim flex items-center justify-center mr-5 group-hover:bg-primary group-hover:text-white text-sm font-bold border border-line group-hover:border-primary">{String.fromCharCode(65 + idx)}</span>
-                <span className="text-lg font-medium">{opt}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // RESULT VIEW
-  if (step === 'RESULT') {
-    return (
-      <div className="max-w-md mx-auto mt-10 text-center animate-fade-in pb-20">
-        
-        {/* REWARD CARD */}
-        {newReward && (
-          <div className="mb-8 animate-bounce-slow">
-             <div className="glass-card p-6 rounded-3xl border-primary/50 shadow-[0_0_50px_rgba(92,101,230,0.3)] bg-gradient-to-br from-primary/20 to-surface">
-                <div className="flex justify-center mb-4">
-                   <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center text-primary shadow-inner animate-pulse">
-                      <Gift size={40} />
-                   </div>
-                </div>
-                <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-1">Item Baru Terbuka!</h3>
-                <h2 className="text-2xl font-bold text-txt-main mb-2">{newReward.name}</h2>
-                <p className="text-xs text-txt-muted">Cek di "Ruang Saya" sekarang.</p>
-             </div>
-          </div>
-        )}
-
-        <div className="glass-card p-12 rounded-3xl shadow-2xl relative overflow-hidden">
-          <h2 className="text-4xl font-bold text-txt-main mb-3">Sesi Selesai!</h2>
-          <div className="flex justify-center gap-3 text-sm mb-10">
-             <span className="flex items-center gap-1.5 bg-surfaceLight border border-line px-4 py-2 rounded-lg text-txt-main"><Clock size={16} className="text-primary" /> {formatTime(elapsedSeconds)}</span>
-             {breakSeconds > 0 && <span className="flex items-center gap-1.5 bg-surfaceLight border border-line px-4 py-2 rounded-lg text-txt-main"><Coffee size={16} className="text-orange-400" /> {formatTime(breakSeconds)}</span>}
-          </div>
-          <div className="bg-surfaceLight/50 rounded-2xl p-6 mb-10 border border-line"><p className="text-xs text-txt-dim uppercase tracking-widest font-bold mb-2">Skor Akhir</p><p className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-txt-main to-txt-muted">{score}%</p></div>
-          <button onClick={() => { setStep('SETUP'); setTopic(''); setLink(''); setFile(null); setNotes(''); setElapsedSeconds(0); setBreakSeconds(0); setIsBreak(false); setNewReward(null); if (onSessionUpdate) onSessionUpdate(null); }} className="w-full bg-txt-main text-surface py-4 rounded-xl font-bold hover:opacity-90 transition-colors shadow-lg">Mulai Sesi Baru</button>
         </div>
       </div>
     );
