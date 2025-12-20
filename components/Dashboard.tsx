@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { UserProgress, StudySession, AppView } from '../types';
-import { Trophy, Clock, Target, Book, TrendingUp, PieChart, Compass, Map, Zap, BrainCircuit, ArrowRight, Lightbulb, ChevronRight, PlayCircle, RotateCw, FileText, X, Eye, Download } from 'lucide-react';
+import { Trophy, Clock, Target, Book, TrendingUp, PieChart, Compass, Map, Zap, BrainCircuit, ArrowRight, Lightbulb, ChevronRight, PlayCircle, RotateCw, FileText, X, Eye, Download, Flame, CheckCircle2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -21,6 +21,61 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
   const lastSession = sessions.length > 0 
     ? [...sessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
     : null;
+
+  // --- Calculate Daily Quests Status ---
+  const today = new Date().toISOString().split('T')[0];
+  const todaysSessions = sessions.filter(s => s.date.startsWith(today));
+  
+  const quests = [
+    { id: 1, label: "Mulai 1 Sesi Belajar", completed: todaysSessions.length > 0, xp: 50 },
+    { id: 2, label: "Fokus Minimal 25 Menit", completed: todaysSessions.some(s => s.durationMinutes >= 25), xp: 100 },
+    { id: 3, label: "Skor Kuis > 80%", completed: todaysSessions.some(s => (s.quizScore || 0) >= 80), xp: 150 },
+  ];
+  
+  const completedQuestsCount = quests.filter(q => q.completed).length;
+
+  // --- Calculate Streak (Simple Logic) ---
+  // In a real app, this should be better handled by backend, but we can infer from session dates.
+  const calculateStreak = () => {
+    if (sessions.length === 0) return 0;
+    
+    // Get unique dates sorted descending
+    const uniqueDates = Array.from(new Set(sessions.map(s => s.date.split('T')[0]))).sort().reverse();
+    
+    // Check if studied today
+    const hasStudiedToday = uniqueDates[0] === today;
+    let streak = hasStudiedToday ? 1 : 0;
+    let currentCheckDate = new Date(hasStudiedToday ? today : new Date().setDate(new Date().getDate() - 1));
+
+    // Iterate backwards
+    // Note: This logic is simplified for frontend-only demo. 
+    // It assumes consecutive days in the 'uniqueDates' array means a streak.
+    // A robust implementation needs loop checking date differences.
+    
+    let tempStreak = 0;
+    let lastDate = new Date(); // Start from today
+    
+    // Check backwards from today/yesterday
+    for (let i = 0; i < 30; i++) { // Check last 30 days max
+       const dateStr = lastDate.toISOString().split('T')[0];
+       if (uniqueDates.includes(dateStr)) {
+         tempStreak++;
+         lastDate.setDate(lastDate.getDate() - 1); // Go to previous day
+       } else {
+         // If we miss today (and it's not today yet in user time maybe), allows 1 day gap if we just started checking? 
+         // Simplification: Streak breaks if date missing.
+         if (i === 0 && !uniqueDates.includes(today)) {
+            // If today is missing, check if yesterday exists
+            lastDate.setDate(lastDate.getDate() - 1);
+            continue; 
+         }
+         break;
+       }
+    }
+    return tempStreak;
+  };
+
+  const streak = calculateStreak();
 
   // 1. Prepare Data for Bar Chart: Total Study Time per Topic
   const getTopicStudyDistribution = () => {
@@ -151,55 +206,75 @@ const Dashboard: React.FC<DashboardProps> = ({ sessions, progress, onChangeView,
   };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-10">
-      <header className="mb-4">
-        <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70 tracking-tight mb-2">
-          Ringkasan Belajar
-        </h2>
-        <p className="text-txt-muted text-lg">Pantau kemajuan Anda, pertahankan siklus, dan raih penguasaan.</p>
-      </header>
-
-      {/* --- HERO SECTION: CONTINUE LEARNING (Requested "Histori Impact" feature) --- */}
-      {lastSession && (
-        <div className="glass-card rounded-2xl overflow-hidden relative group border border-primary/30 shadow-[0_0_30px_rgba(92,101,230,0.15)]">
-           <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-80"></div>
-           <div className="absolute -right-10 -bottom-20 w-64 h-64 bg-primary rounded-full blur-[80px] opacity-30 group-hover:opacity-40 transition-opacity"></div>
-           
-           <div className="relative z-10 p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div>
-                 <div className="flex items-center gap-2 mb-2">
-                    <span className="bg-primary px-3 py-1 rounded-full text-[10px] font-bold text-white uppercase tracking-wider shadow-lg shadow-primary/40 flex items-center gap-1">
-                      <Clock size={12} /> Lanjutkan Belajar
-                    </span>
-                    <span className="text-xs text-txt-muted">Terakhir: {new Date(lastSession.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}</span>
-                 </div>
-                 <h3 className="text-2xl md:text-3xl font-bold text-white mb-2 leading-tight">{lastSession.topic}</h3>
-                 <p className="text-txt-muted text-sm max-w-xl">
-                   Anda terakhir kali mendapatkan skor <span className={lastSession.quizScore && lastSession.quizScore >= 70 ? "text-green-400 font-bold" : "text-orange-400 font-bold"}>{lastSession.quizScore || 0}%</span>. 
-                   {lastSession.quizScore && lastSession.quizScore >= 70 
-                     ? " Hasil yang bagus! Siap untuk materi lanjutan atau pendalaman?" 
-                     : " Mungkin perlu sedikit pengulangan untuk memperkuat ingatan."}
-                 </p>
-              </div>
-              
-              <div className="flex gap-3 shrink-0">
-                 <button 
-                   onClick={() => setSelectedSession(lastSession)}
-                   className="px-5 py-3 rounded-xl bg-surfaceLight border border-line text-txt-muted hover:text-white hover:bg-white/5 font-semibold transition-all flex items-center gap-2"
-                 >
-                   <Eye size={18} /> Review
-                 </button>
-                 <button 
-                   onClick={() => onStartStudy(lastSession.topic)}
-                   className="px-6 py-3 rounded-xl bg-primary hover:bg-primaryHover text-white font-bold transition-all shadow-lg shadow-primary/30 flex items-center gap-2 group-hover:scale-105 transform duration-200"
-                 >
-                   <PlayCircle size={20} /> 
-                   {lastSession.quizScore && lastSession.quizScore >= 70 ? "Lanjut Belajar" : "Ulangi Materi"}
-                 </button>
-              </div>
+    <div className="space-y-6 animate-fade-in pb-10">
+      <header className="mb-4 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+           <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70 tracking-tight mb-2">
+             Ringkasan Belajar
+           </h2>
+           <p className="text-txt-muted text-lg">Pantau kemajuan Anda, pertahankan siklus, dan raih penguasaan.</p>
+        </div>
+        
+        {/* STREAK BADGE */}
+        <div className="flex items-center gap-3 bg-surfaceLight/50 border border-line px-5 py-3 rounded-2xl shadow-lg">
+           <div className={`p-2 rounded-full ${streak > 0 ? 'bg-orange-500/20 text-orange-500 animate-pulse' : 'bg-white/5 text-txt-dim'}`}>
+              <Flame size={20} fill={streak > 0 ? "currentColor" : "none"} />
+           </div>
+           <div>
+              <p className="text-xs text-txt-muted font-bold uppercase tracking-wider">Streak</p>
+              <p className="text-xl font-black text-white">{streak} <span className="text-xs font-normal text-txt-dim">Hari</span></p>
            </div>
         </div>
-      )}
+      </header>
+      
+      {/* --- DAILY QUESTS SECTION (NEW) --- */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+         {/* Quests Card */}
+         <div className="md:col-span-2 glass-card p-6 rounded-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+               <Target size={100} />
+            </div>
+            
+            <div className="flex justify-between items-center mb-6">
+               <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Zap size={20} className="text-yellow-400" fill="currentColor" /> Misi Harian
+               </h3>
+               <span className="text-xs font-bold bg-surfaceLight px-3 py-1 rounded-full border border-line text-txt-muted">
+                  {completedQuestsCount}/{quests.length} Selesai
+               </span>
+            </div>
+
+            <div className="space-y-3 relative z-10">
+               {quests.map((quest) => (
+                  <div key={quest.id} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${quest.completed ? 'bg-green-500/10 border-green-500/30' : 'bg-surfaceLight/30 border-line'}`}>
+                     <div className="flex items-center gap-3">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${quest.completed ? 'bg-green-500 border-green-500 text-white' : 'border-line text-transparent'}`}>
+                           <CheckCircle2 size={14} />
+                        </div>
+                        <span className={`text-sm font-medium ${quest.completed ? 'text-white line-through decoration-white/30' : 'text-txt-muted'}`}>{quest.label}</span>
+                     </div>
+                     <span className={`text-xs font-bold ${quest.completed ? 'text-green-400' : 'text-txt-dim'}`}>+{quest.xp} XP</span>
+                  </div>
+               ))}
+            </div>
+         </div>
+         
+         {/* Quick Continue Card */}
+         <div className="glass-card p-6 rounded-2xl flex flex-col justify-between group cursor-pointer hover:border-primary/50 transition-all" onClick={() => lastSession ? onStartStudy(lastSession.topic) : onChangeView(AppView.STUDY_SESSION)}>
+            <div>
+               <p className="text-xs font-bold text-txt-dim uppercase tracking-wider mb-2">Lanjutkan</p>
+               <h3 className="text-xl font-bold text-white leading-tight mb-1">
+                 {lastSession ? lastSession.topic : "Mulai Sesi Baru"}
+               </h3>
+               {lastSession && <p className="text-xs text-txt-muted">Terakhir: {new Date(lastSession.date).toLocaleDateString('id-ID')}</p>}
+            </div>
+            <div className="mt-4 flex justify-end">
+               <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30 group-hover:scale-110 transition-transform">
+                  <PlayCircle size={20} />
+               </div>
+            </div>
+         </div>
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard';
 import Planner from './components/Planner';
 import StudySessionView from './components/StudySessionView';
 import ReviewCenter from './components/ReviewCenter';
+import CharacterRoom from './components/CharacterRoom'; // Import New Component
 import Auth from './components/Auth';
 import { AppView, StudyModule, StudySession, UserProgress } from './types';
 import { Menu, Loader2, Timer, Maximize2 } from 'lucide-react';
@@ -142,12 +143,10 @@ const App: React.FC = () => {
     }
   };
 
-  // UPDATED: Added `shouldReplace` param to handle wiping old plans
   const handleUpdateModules = async (updatedModules: StudyModule[], shouldReplace: boolean = false) => {
     setModules(updatedModules);
 
     if (session?.user && !isGuest) {
-      // 1. If replacing the plan (New Plan), delete ALL existing modules first
       if (shouldReplace) {
          try {
            await supabase.from('modules').delete().eq('user_id', session.user.id);
@@ -156,7 +155,6 @@ const App: React.FC = () => {
          }
       }
 
-      // 2. Insert/Update new modules
       const payload = updatedModules.map(m => ({
         id: m.id,
         user_id: session.user.id,
@@ -172,7 +170,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Helper to format time for the floating widget
   const formatTime = (totalSeconds: number) => {
     const minutes = Math.floor(Math.abs(totalSeconds) / 60);
     const seconds = Math.abs(totalSeconds) % 60;
@@ -238,12 +235,11 @@ const App: React.FC = () => {
                 completedTopics={completedTopics} 
               />
             )}
+
+            {currentView === AppView.CHARACTER && (
+              <CharacterRoom sessions={sessions} />
+            )}
             
-            {/* 
-              PERSISTENT VIEW STRATEGY:
-              We keep StudySessionView mounted but hidden when not active view.
-              This preserves the timer state and notes content.
-            */}
             <div style={{ display: currentView === AppView.STUDY_SESSION ? 'block' : 'none' }}>
               <StudySessionView 
                 initialTopic={sessionTopicIntent} 
@@ -262,18 +258,17 @@ const App: React.FC = () => {
         </main>
 
         {/* FLOATING TIMER WIDGET */}
-        {/* Only show if we are NOT in StudySession view, but a session IS active/running */}
         {currentView !== AppView.STUDY_SESSION && activeSessionState && activeSessionState.isActive && (
           <div className="fixed bottom-6 right-6 z-50 animate-fade-in">
-            <div className="bg-surface/90 backdrop-blur-md border border-primary/30 p-4 rounded-2xl shadow-2xl flex items-center gap-4 max-w-sm w-full">
-              <div className={`p-3 rounded-full ${activeSessionState.isBreak ? 'bg-orange-500/20 text-orange-500' : 'bg-primary/20 text-primary'} animate-pulse`}>
+            <div className={`backdrop-blur-md border p-4 rounded-2xl shadow-2xl flex items-center gap-4 max-w-sm w-full ${activeSessionState.topic.includes('Paused') ? 'bg-yellow-900/40 border-yellow-500/30' : 'bg-surface/90 border-primary/30'}`}>
+              <div className={`p-3 rounded-full ${activeSessionState.topic.includes('Paused') ? 'bg-yellow-500/20 text-yellow-500' : activeSessionState.isBreak ? 'bg-orange-500/20 text-orange-500' : 'bg-primary/20 text-primary'} ${!activeSessionState.topic.includes('Paused') && 'animate-pulse'}`}>
                  <Timer size={24} />
               </div>
               <div className="flex-1 min-w-0">
                  <p className="text-[10px] uppercase font-bold tracking-wider text-txt-dim mb-0.5">
-                   {activeSessionState.isBreak ? 'Sedang Istirahat' : 'Sesi Aktif'}
+                   {activeSessionState.topic.includes('Paused') ? 'Jeda' : activeSessionState.isBreak ? 'Sedang Istirahat' : 'Sesi Aktif'}
                  </p>
-                 <p className="text-sm font-bold text-white truncate">{activeSessionState.topic}</p>
+                 <p className="text-sm font-bold text-white truncate">{activeSessionState.topic.replace(' (Paused)', '')}</p>
                  <p className="text-xl font-mono font-bold text-white mt-1">
                    {formatTime(activeSessionState.elapsedSeconds)}
                  </p>

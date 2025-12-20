@@ -1,8 +1,10 @@
+
 export enum AppView {
   DASHBOARD = 'DASHBOARD',
   PLANNER = 'PLANNER',
   STUDY_SESSION = 'STUDY_SESSION',
-  QUIZ_MODE = 'QUIZ_MODE'
+  QUIZ_MODE = 'QUIZ_MODE',
+  CHARACTER = 'CHARACTER' // New View
 }
 
 export interface StudyModule {
@@ -34,6 +36,7 @@ export interface StudySession {
   referenceLink?: string;
   startTime: string;
   durationMinutes: number;
+  breakMinutes?: number; // New field for gamification
   notes: string; // Markdown content
   quiz: QuizQuestion[];
   quizScore?: number;

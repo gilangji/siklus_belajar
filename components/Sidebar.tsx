@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Calendar, LayoutDashboard, BrainCircuit, LogOut, User, History, X, Clock, ChevronRight } from 'lucide-react';
+import { BookOpen, Calendar, LayoutDashboard, BrainCircuit, LogOut, User, History, X, Clock, ChevronRight, Home } from 'lucide-react';
 import { AppView, StudySession } from '../types';
 
 interface SidebarProps {
@@ -30,6 +30,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { view: AppView.PLANNER, label: 'Rencana Belajar', icon: Calendar },
     { view: AppView.STUDY_SESSION, label: 'Mulai Belajar', icon: BookOpen },
     { view: AppView.QUIZ_MODE, label: 'Pusat Latihan', icon: BrainCircuit },
+    { view: AppView.CHARACTER, label: 'Ruang Saya', icon: Home }, // New Menu
   ];
 
   // Determine Display Name
@@ -81,6 +82,14 @@ const Sidebar: React.FC<SidebarProps> = ({
             >
               <item.icon size={20} className={`transition-colors ${currentView === item.view ? 'text-primary' : 'text-txt-dim group-hover:text-white'}`} />
               <span className="text-sm">{item.label}</span>
+              
+              {/* Special indicator for Character Room */}
+              {item.view === AppView.CHARACTER && (
+                 <span className="ml-auto flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+              )}
             </button>
           ))}
         </nav>
@@ -150,6 +159,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </span>
                         <span className="text-[10px] text-txt-dim flex items-center gap-1">
                           <Clock size={10} /> {s.durationMinutes}m
+                          {s.breakMinutes && s.breakMinutes > 0 && (
+                            <span className="text-green-400">+ {s.breakMinutes}m Rest</span>
+                          )}
                         </span>
                       </div>
                     </div>
