@@ -14,6 +14,7 @@ const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
 
   // Theme State (Default to Dark)
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -58,7 +59,7 @@ const App: React.FC = () => {
       } catch (err) {
         console.warn("Failed to check session:", err);
       } finally {
-        // We delay setting loading to false slightly to allow local storage check below
+        setIsAuthChecked(true);
       }
     };
     checkSession();
@@ -73,6 +74,8 @@ const App: React.FC = () => {
   
   // 1. Load Data on Mount (Local Storage for Guest / Supabase for User)
   useEffect(() => {
+    if (!isAuthChecked) return;
+
     const loadData = async () => {
       if (session?.user && !isGuest) {
         // Load from Supabase
@@ -98,11 +101,8 @@ const App: React.FC = () => {
       setLoading(false);
     };
 
-    // Wait for session check to complete roughly
-    if (!loading) {
-       loadData();
-    }
-  }, [session, isGuest, loading]);
+    loadData();
+  }, [isAuthChecked, session, isGuest]);
 
   const fetchUserData = async () => {
     if (!session?.user) return;
